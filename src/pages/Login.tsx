@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { Eye, EyeOff, Lock, User } from 'lucide-react'
 import api from '@/lib/api'
+import ReCAPTCHA from 'react-google-recaptcha'
+
+const SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || ''
 
 interface UserSession {
   id: string; username: string; nombre: string; rol: string
@@ -11,22 +14,27 @@ interface LoginProps {
 }
 
 export function Login({ onLogin }: LoginProps) {
+  const [mode, setMode] = useState<'login' | 'register'>('login')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
+  const [nombre, setNombre] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
-      const user = await api.auth.login({ username, password }) as UserSession
+      const user = mode === 'login'
+        ? await api.auth.login({ username, password, captchaToken })
+        : await api.auth.register({ nombre, username, password, captchaToken }) as UserSession
       localStorage.setItem('nova_user', JSON.stringify(user))
       onLogin(user)
     } catch (err: any) {
-      setError(err.message || 'Credenciales inválidas')
+      setError(err.message || 'Ocurrió un error')
     } finally {
       setLoading(false)
     }
@@ -34,7 +42,6 @@ export function Login({ onLogin }: LoginProps) {
 
   return (
     <div className="min-h-screen bg-[#2B2B2B] flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-amber-300/[0.04] rounded-full blur-3xl" />
       </div>
@@ -61,7 +68,38 @@ export function Login({ onLogin }: LoginProps) {
             </div>
           )}
 
+          <div className="flex gap-2 mb-6">
+            <button
+              type="button"
+              onClick={() => { setMode('login'); setError(''); setCaptchaToken(null) }}
+              className={`flex-1 h-10 rounded-xl text-sm font-medium transition-all ${mode === 'login' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground hover:text-foreground'}`}
+            >
+              Ingresar
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode('register'); setError(''); setCaptchaToken(null) }}
+              className={`flex-1 h-10 rounded-xl text-sm font-medium transition-all ${mode === 'register' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground hover:text-foreground'}`}
+            >
+              Registrarse
+            </button>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-5">
+            {mode === 'register' && (
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-2 tracking-wider uppercase">Nombre completo</label>
+                <input
+                  type="text"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  className="w-full h-12 px-4 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-all"
+                  placeholder="Tu nombre"
+                  required
+                />
+              </div>
+            )}
+
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-2 tracking-wider uppercase">Usuario</label>
               <div className="relative group">
@@ -95,20 +133,23 @@ export function Login({ onLogin }: LoginProps) {
               </div>
             </div>
 
+            <div className="flex justify-center pt-1">
+              <ReCAPTCHA sitekey={SITE_KEY} onChange={setCaptchaToken} />
+            </div>
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !captchaToken}
               className="w-full h-12 bg-primary text-primary-foreground font-medium rounded-xl transition-all duration-300 disabled:opacity-50 hover:bg-primary/90 mt-2"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                  Ingresando...
+                  {mode === 'login' ? 'Ingresando...' : 'Registrando...'}
                 </span>
-              ) : 'Ingresar'}
+              ) : mode === 'login' ? 'Ingresar' : 'Registrarse'}
             </button>
           </form>
-          
         </div>
 
         <p className="text-center text-xs text-muted-foreground/60 mt-8 tracking-wider">&copy; 2026 NOVA</p>
