@@ -1,0 +1,132 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 20% 97%;
+    --foreground: 224 71% 4%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71% 4%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71% 4%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 224 71% 4%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 262 50% 96%;
+    --accent-foreground: 262 83% 58%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --success: 142 76% 36%;
+    --success-foreground: 210 40% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 210 40% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 262 83% 58%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 0 0% 5%;
+    --foreground: 40 15% 90%;
+    --card: 0 0% 0%;
+    --card-foreground: 40 15% 90%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 40 15% 90%;
+    --primary: 258 55% 74%;
+    --primary-foreground: 258 40% 8%;
+    --secondary: 0 0% 13%;
+    --secondary-foreground: 40 15% 85%;
+    --muted: 0 0% 13%;
+    --muted-foreground: 40 8% 62%;
+    --accent: 258 40% 18%;
+    --accent-foreground: 258 55% 82%;
+    --destructive: 4 55% 72%;
+    --destructive-foreground: 4 40% 8%;
+    --success: 150 40% 68%;
+    --success-foreground: 150 40% 8%;
+    --warning: 38 85% 76%;
+    --warning-foreground: 38 45% 10%;
+    --border: 0 0% 26%;
+    --input: 0 0% 22%;
+    --ring: 258 55% 70%;
+  }
+
+  * {
+    @apply border-border;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased transition-colors duration-300;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+}
+
+@layer utilities {
+  .animate-in {
+    animation: fadeIn 0.5s ease-out both;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .glass {
+    @apply bg-white/80 backdrop-blur-xl border border-white/20 shadow-lg dark:bg-slate-900/80 dark:border-slate-700/50;
+  }
+
+  .glass-dark {
+    @apply bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 shadow-xl;
+  }
+}
+
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  body > * { display: none !important; }
+  body > #factura-root { display: block !important; }
+  #factura-root {
+    position: static !important;
+    background: white !important;
+  }
+  #factura-root .factura-overlay { display: none !important; }
+  #factura-root .factura-card {
+    position: static !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    background: white !important;
+  }
+  #factura-root .factura-header { display: none !important; }
+  #factura-root * { color: #000 !important; border-color: #000 !important; }
+  #factura-root table { border-collapse: collapse !important; }
+}
