@@ -16,6 +16,7 @@ interface LoginProps {
 export function Login({ onLogin }: LoginProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [nombre, setNombre] = useState('')
   const [showPass, setShowPass] = useState(false)
@@ -30,7 +31,7 @@ export function Login({ onLogin }: LoginProps) {
     try {
       const user = mode === 'login'
         ? await api.auth.login({ username, password, captchaToken })
-        : await api.auth.register({ nombre, username, password, captchaToken }) as UserSession
+        : await api.auth.register({ nombre, username, email, password, captchaToken }) as UserSession
       localStorage.setItem('nova_user', JSON.stringify(user))
       onLogin(user)
     } catch (err: any) {
@@ -114,6 +115,20 @@ export function Login({ onLogin }: LoginProps) {
                 />
               </div>
             </div>
+
+            {mode === 'register' && (
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-2 tracking-wider uppercase">Correo electrónico</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full h-12 px-4 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-all"
+                  placeholder="Tu correo electrónico"
+                  required
+                />
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-2 tracking-wider uppercase">Contraseña</label>
