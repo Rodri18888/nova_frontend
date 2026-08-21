@@ -77,7 +77,7 @@ const api = {
       localStorage.setItem(TOKEN_KEY, result.token);
       return result.user;
     },
-    register: async (data: { nombre: string; username: string; password: string; captchaToken?: string | null }) => {
+    register: async (data: { nombre: string; username: string; email: string; password: string; captchaToken?: string | null }) => {
       const res = await fetch(`${BASE}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -100,6 +100,7 @@ const api = {
       username: string;
       password: string;
       nombre: string;
+      email: string;
       rol: string;
     }) =>
       apiFetch("/api/users", { method: "POST", body: JSON.stringify(data) }),
