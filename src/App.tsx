@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { Login } from './pages/Login'
+import { ResetPassword } from './pages/ResetPassword'
 import { Dashboard } from './pages/Dashboard'
 import { Products } from './pages/Products'
 import { Inventory } from './pages/Inventory'
@@ -67,31 +68,41 @@ function App() {
 
   if (loading) return <SplashScreen />
 
-  if (!user) return <Login onLogin={handleLogin} />
-
   return (
     <ToastProvider>
       <Router>
-        <Layout user={user} onLogout={handleLogout}>
-          <div className="animate-in">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/products" element={<Products user={user} />} />
-              <Route path="/inventory" element={<Inventory user={user} />} />
-              <Route path="/pos" element={<POS user={user} />} />
-              <Route path="/sales" element={<Sales user={user} />} />
-              <Route path="/customers" element={<Customers />} />
-              {user.rol === 'admin' && <Route path="/users" element={<Users />} />}
-              <Route path="/devoluciones" element={<Devoluciones user={user} />} />
-              <Route path="/caja" element={<Caja user={user} />} />
-              <Route path="/compras" element={<Compras user={user} />} />
-              <Route path="/proveedores" element={<Proveedores />} />
-              <Route path="/etiquetas" element={<Etiquetas />} />
+        <Routes>
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route
+            path="*"
+            element={
+              user ? (
+                <Layout user={user} onLogout={handleLogout}>
+                  <div className="animate-in">
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/products" element={<Products user={user} />} />
+                      <Route path="/inventory" element={<Inventory user={user} />} />
+                      <Route path="/pos" element={<POS user={user} />} />
+                      <Route path="/sales" element={<Sales user={user} />} />
+                      <Route path="/customers" element={<Customers />} />
+                      {user.rol === 'admin' && <Route path="/users" element={<Users />} />}
+                      <Route path="/devoluciones" element={<Devoluciones user={user} />} />
+                      <Route path="/caja" element={<Caja user={user} />} />
+                      <Route path="/compras" element={<Compras user={user} />} />
+                      <Route path="/proveedores" element={<Proveedores />} />
+                      <Route path="/etiquetas" element={<Etiquetas />} />
 
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-          </div>
-        </Layout>
+                      <Route path="*" element={<Navigate to="/" />} />
+                    </Routes>
+                  </div>
+                </Layout>
+              ) : (
+                <Login onLogin={handleLogin} />
+              )
+            }
+          />
+        </Routes>
       </Router>
       <Toaster />
     </ToastProvider>
