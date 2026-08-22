@@ -27,19 +27,19 @@ export interface UserSession {
 
 function SplashScreen() {
   return (
-    <div className="fixed inset-0 bg-[#2B2B2B] flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-background flex items-center justify-center z-50">
       <div className="text-center animate-in">
         <div className="relative inline-block mb-8">
-          <div className="absolute inset-0 bg-amber-300/20 blur-3xl rounded-full" />
-          <img src="/nova-logo.png" alt="NOVA" className="relative w-24 h-24 rounded-2xl object-cover mx-auto shadow-2xl ring-1 ring-amber-300/40" />
+          <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
+          <img src="/nova-logo.png" alt="NOVA" className="relative w-24 h-24 rounded-2xl object-cover mx-auto shadow-2xl ring-1 ring-primary/40" />
         </div>
         <h1 className="text-4xl font-light text-foreground tracking-[0.3em] mb-3">NOVA</h1>
-        <div className="w-16 h-px bg-gradient-to-r from-transparent via-amber-300/60 to-transparent mx-auto mb-4" />
-        <p className="text-xs text-amber-300/80 tracking-[0.2em] uppercase">Sistema de Ventas</p>
+        <div className="w-16 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent mx-auto mb-4" />
+        <p className="text-xs text-primary/80 tracking-[0.2em] uppercase">Sistema de Ventas</p>
         <div className="flex items-center justify-center gap-1.5 mt-8">
-          <div className="w-1.5 h-1.5 bg-amber-300/60 rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
-          <div className="w-1.5 h-1.5 bg-amber-300/60 rounded-full animate-pulse" style={{ animationDelay: '200ms' }} />
-          <div className="w-1.5 h-1.5 bg-amber-300/60 rounded-full animate-pulse" style={{ animationDelay: '400ms' }} />
+          <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
+          <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-pulse" style={{ animationDelay: '200ms' }} />
+          <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-pulse" style={{ animationDelay: '400ms' }} />
         </div>
       </div>
     </div>
