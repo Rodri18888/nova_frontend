@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Eye, EyeOff, Lock, User, Sun, Moon } from 'lucide-react'
+import { Eye, EyeOff, Lock, User, Sun, Moon, MailOpen, CheckCircle2 } from 'lucide-react'
 import api from '@/lib/api'
 import ReCAPTCHA from 'react-google-recaptcha'
 import { useTheme } from '@/hooks/use-theme'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || ''
 
@@ -25,6 +26,11 @@ export function Login({ onLogin }: LoginProps) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [showForgot, setShowForgot] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotLoading, setForgotLoading] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
+  const [forgotError, setForgotError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,6 +47,25 @@ export function Login({ onLogin }: LoginProps) {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setForgotError('')
+    setForgotLoading(true)
+    try {
+      await api.auth.forgotPassword(forgotEmail)
+      setForgotSent(true)
+    } catch (err: any) {
+      setForgotError(err.message || 'No se pudo enviar el correo')
+    } finally {
+      setForgotLoading(false)
+    }
+  }
+
+  const closeForgot = () => {
+    setShowForgot(false)
+    setTimeout(() => { setForgotSent(false); setForgotEmail(''); setForgotError('') }, 300)
   }
 
   return (
@@ -176,10 +201,95 @@ export function Login({ onLogin }: LoginProps) {
               ) : mode === 'login' ? 'Ingresar' : 'Registrarse'}
             </button>
           </form>
+
+          {mode === 'login' && (
+            <button
+              type="button"
+              onClick={() => setShowForgot(true)}
+              className="block mx-auto mt-5 text-xs text-muted-foreground hover:text-primary underline underline-offset-4 transition-colors"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          )}
         </div>
 
         <p className="text-center text-xs text-muted-foreground/60 mt-8 tracking-wider">&copy; 2026 NOVA</p>
       </div>
+
+      <Dialog open={showForgot} onOpenChange={(open) => !open && closeForgot()}>
+        <DialogContent className="max-w-md bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-light tracking-wide">
+              {forgotSent ? 'Revisa tu correo' : 'Recuperar contraseña'}
+            </DialogTitle>
+          </DialogHeader>
+
+          {forgotSent ? (
+            <div className="space-y-5 pt-1">
+              <div className="flex flex-col items-center text-center gap-3 py-2">
+                <CheckCircle2 className="w-12 h-12 text-success" />
+                <p className="text-sm text-muted-foreground">
+                  Si <span className="text-foreground font-medium">{forgotEmail}</span> está registrado,
+                  te enviamos un enlace para restablecer tu contraseña.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeForgot}
+                className="w-full h-11 bg-success/20 text-emerald-700 dark:text-emerald-300 border border-success/40 hover:bg-success/30 font-medium rounded-xl transition-all"
+              >
+                Volver al login
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleForgot} className="space-y-5 pt-1">
+              <p className="text-sm text-muted-foreground">
+                Escribe el correo asociado a tu cuenta y te enviaremos un enlace para restablecer tu contraseña.
+              </p>
+
+              {forgotError && (
+                <div className="bg-destructive/15 border border-destructive/30 text-destructive px-4 py-3 rounded-xl text-sm flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-destructive rounded-full flex-shrink-0" />
+                  {forgotError}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-2 tracking-wider uppercase">Correo electrónico</label>
+                <div className="relative group">
+                  <MailOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                  <input
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    className="w-full h-12 pl-11 pr-4 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-all"
+                    placeholder="tu correo electrónico"
+                    required
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={closeForgot}
+                  className="flex-1 h-11 bg-destructive/15 text-red-700 dark:text-red-300 border border-destructive/40 hover:bg-destructive/25 font-medium rounded-xl transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="flex-1 h-11 bg-success/20 text-emerald-700 dark:text-emerald-300 border border-success/40 hover:bg-success/30 font-medium rounded-xl transition-all disabled:opacity-50"
+                >
+                  {forgotLoading ? 'Enviando...' : 'Enviar enlace'}
+                </button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
