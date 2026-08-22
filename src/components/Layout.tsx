@@ -2,8 +2,9 @@ import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Warehouse, ShoppingCart, Receipt, Users,
-  UserCog, RotateCcw, Wallet, Truck, TruckIcon, Tag, LogOut,
+  UserCog, RotateCcw, Wallet, Truck, TruckIcon, Tag, LogOut, Sun, Moon,
 } from 'lucide-react'
+import { useTheme } from '@/hooks/use-theme'
 
 const allNavigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard, roles: ['admin', 'vendedor'] },
@@ -33,6 +34,7 @@ interface LayoutProps {
 
 export function Layout({ children, user, onLogout }: LayoutProps) {
   const location = useLocation()
+  const { theme, toggle } = useTheme()
   const navigation = allNavigation.filter(item => item.roles.includes(user.rol))
 
   return (
@@ -99,6 +101,14 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
         {/* Top bar */}
         <header className="h-16 flex-shrink-0 bg-background flex items-center justify-end px-6 lg:px-8">
           <div className="flex items-center gap-2.5">
+            <button
+              onClick={toggle}
+              title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+              aria-label="Cambiar tema"
+              className="w-9 h-9 mr-1 flex items-center justify-center rounded-xl border border-border bg-accent/50 text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
             <div className="w-8 h-8 bg-primary/20 border border-primary/30 rounded-lg flex items-center justify-center">
               <span className="text-xs font-bold text-primary">{user.nombre.charAt(0)}</span>
             </div>

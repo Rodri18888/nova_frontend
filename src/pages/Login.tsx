@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Eye, EyeOff, Lock, User } from 'lucide-react'
+import { Eye, EyeOff, Lock, User, Sun, Moon } from 'lucide-react'
 import api from '@/lib/api'
 import ReCAPTCHA from 'react-google-recaptcha'
+import { useTheme } from '@/hooks/use-theme'
 
 const SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || ''
 
@@ -15,6 +16,7 @@ interface LoginProps {
 
 export function Login({ onLogin }: LoginProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login')
+  const { theme, toggle } = useTheme()
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -42,23 +44,32 @@ export function Login({ onLogin }: LoginProps) {
   }
 
   return (
-    <div className="min-h-screen bg-[#2B2B2B] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      <button
+        onClick={toggle}
+        title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+        aria-label="Cambiar tema"
+        className="absolute top-6 right-6 z-20 w-10 h-10 flex items-center justify-center rounded-xl border border-border bg-accent/50 text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
+      >
+        {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      </button>
+
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-amber-300/[0.04] rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/[0.06] rounded-full blur-3xl" />
       </div>
 
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-10">
           <div className="relative inline-block mb-6">
-            <div className="absolute inset-0 bg-amber-300/20 blur-3xl rounded-full" />
-            <img src="/nova-logo.png" alt="NOVA" className="relative w-20 h-20 rounded-2xl object-cover mx-auto shadow-2xl ring-1 ring-amber-300/40" />
+            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
+            <img src="/nova-logo.png" alt="NOVA" className="relative w-20 h-20 rounded-2xl object-cover mx-auto shadow-2xl ring-1 ring-primary/40" />
           </div>
           <h1 className="text-4xl font-light text-foreground tracking-[0.3em]">NOVA</h1>
-          <div className="w-16 h-px bg-gradient-to-r from-transparent via-amber-300/60 to-transparent mx-auto mt-3 mb-3" />
-          <p className="text-xs text-amber-300/80 tracking-[0.2em] uppercase">Sistema de Ventas Profesional</p>
+          <div className="w-16 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent mx-auto mt-3 mb-3" />
+          <p className="text-xs text-primary/80 tracking-[0.2em] uppercase">Sistema de Ventas Profesional</p>
         </div>
 
-        <div className="bg-black/40 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-border">
+        <div className="bg-card/80 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-border">
           <h2 className="text-xl font-light text-foreground mb-1 tracking-wide">Bienvenido</h2>
           <p className="text-muted-foreground text-sm mb-8">Ingresa tus credenciales para continuar</p>
 
