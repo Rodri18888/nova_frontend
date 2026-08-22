@@ -93,6 +93,34 @@ const api = {
       localStorage.setItem(TOKEN_KEY, result.token);
       return result.user;
     },
+    forgotPassword: async (email: string) => {
+      const res = await fetch(`${BASE}/api/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        const err = await res
+          .json()
+          .catch(() => ({ error: "Error del servidor" }));
+        throw new Error(err.error || "No se pudo enviar el correo");
+      }
+      return res.json();
+    },
+    resetPassword: async (token: string, newPassword: string) => {
+      const res = await fetch(`${BASE}/api/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, newPassword }),
+      });
+      if (!res.ok) {
+        const err = await res
+          .json()
+          .catch(() => ({ error: "Error del servidor" }));
+        throw new Error(err.error || "No se pudo restablecer la contraseña");
+      }
+      return res.json();
+    },
   },
   users: {
     list: () => apiFetch("/api/users"),
