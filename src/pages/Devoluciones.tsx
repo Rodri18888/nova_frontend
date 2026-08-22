@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast'
 import type { UserSession } from '@/App'
 import { PageHeader } from '@/components/ui/page-header'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 interface Sale { id: string; invoice: string; total: number; subtotal: number; tax: number; paymentMethod: string; status: string; customer?: any; items: any[]; createdAt: string }
 interface Devolution { id: string; invoice: string; sale: any; total: number; motivo: string; user?: any; items: any[]; createdAt: string }
@@ -23,6 +24,7 @@ export function Devoluciones({ user }: { user: UserSession }) {
   const [selectedItems, setSelectedItems] = useState<Record<string, number>>({})
   const [motivo, setMotivo] = useState('')
   const [processing, setProcessing] = useState(false)
+  const [confirmReturn, setConfirmReturn] = useState(false)
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
 
@@ -47,6 +49,7 @@ export function Devoluciones({ user }: { user: UserSession }) {
   }
 
   const handleReturn = async () => {
+    setConfirmReturn(false)
     if (!selectedSale || !motivo.trim()) return
     const items = Object.entries(selectedItems).filter(([_, qty]) => qty > 0).map(([itemId, quantity]) => {
       const item = selectedSale.items.find((i: any) => i.id === itemId)
@@ -69,6 +72,14 @@ export function Devoluciones({ user }: { user: UserSession }) {
     const matchDateTo = !dateTo || new Date(d.createdAt) <= new Date(dateTo + 'T23:59:59')
     return matchDateFrom && matchDateTo
   })
+
+  const selectedCount = Object.values(selectedItems).filter(q => q > 0).length
+  const returnTotal = Object.entries(selectedItems)
+    .filter(([, qty]) => qty > 0)
+    .reduce((sum, [itemId, qty]) => {
+      const item = selectedSale?.items.find((i: any) => i.id === itemId)
+      return sum + (item ? item.price * qty : 0)
+    }, 0)
 
   if (loading) return <LoadingSpinner />
 
@@ -126,7 +137,7 @@ export function Devoluciones({ user }: { user: UserSession }) {
                   <option value="defectuoso">Producto defectuoso</option>
                 </select>
               </div>
-              <Button onClick={handleReturn} disabled={processing || !motivo.trim()} className="bg-warning/20 text-warning border border-warning/30 hover:bg-warning/30">
+              <Button onClick={() => setConfirmReturn(true)} disabled={processing || !motivo.trim()} className="bg-warning/20 text-warning border border-warning/30 hover:bg-warning/30">
                 <RotateCcw className="w-4 h-4 mr-2" /> {processing ? 'Procesando...' : 'Procesar Devolución'}
               </Button>
             </div>
@@ -166,6 +177,21 @@ export function Devoluciones({ user }: { user: UserSession }) {
           </table>
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={confirmReturn}
+        onOpenChange={setConfirmReturn}
+        title="Procesar devolución"
+        description={
+          selectedCount > 0
+            ? `Se devolverán ${selectedCount} producto(s) por un total de ${formatCurrency(returnTotal)}. Motivo: ${motivo}.`
+            : 'Selecciona al menos un producto con cantidad mayor a 0.'
+        }
+        confirmText="Sí, procesar"
+        confirmDisabled={selectedCount === 0}
+        loading={processing}
+        onConfirm={handleReturn}
+      />
     </div>
   )
 }

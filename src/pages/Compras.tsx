@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Plus, Trash2, TruckIcon, Check } from 'lucide-react'
+import { Plus, Trash2, Check } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import api from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
@@ -17,7 +17,7 @@ interface Product { id: string; name: string; sku: string; price: number }
 interface PurchaseItem { productId: string; quantity: number; price: number }
 interface Purchase { id: string; invoice: string; supplier?: any; total: number; status: string; items: any[]; createdAt: string }
 
-export function Compras({ user }: { user: UserSession }) {
+export function Compras({ user: _user }: { user: UserSession }) {
   const { addToast } = useToast()
   const [purchases, setPurchases] = useState<Purchase[]>([])
   const [suppliers, setSuppliers] = useState<Supplier[]>([])

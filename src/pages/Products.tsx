@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast'
 import { PageHeader } from '@/components/ui/page-header'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { SearchBar } from '@/components/ui/search-bar'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 interface Product {
   id: string
@@ -40,7 +41,7 @@ interface Category {
   name: string
 }
 
-export function Products({ user }: { user?: any } = {}) {
+export function Products({ user: _user }: { user?: any } = {}) {
   const { addToast } = useToast()
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
@@ -64,6 +65,11 @@ export function Products({ user }: { user?: any } = {}) {
     size: '',
     color: '',
   })
+  const [confirmSave, setConfirmSave] = useState(false)
+  const [savingProduct, setSavingProduct] = useState(false)
+  const [deleteProduct, setDeleteProduct] = useState<Product | null>(null)
+  const [confirmCategoryUpdate, setConfirmCategoryUpdate] = useState(false)
+  const [deleteCategory, setDeleteCategory] = useState<Category | null>(null)
 
   useEffect(() => { loadData() }, [])
 
@@ -89,8 +95,13 @@ export function Products({ user }: { user?: any } = {}) {
     product.barcode?.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const requestSave = (e: React.FormEvent) => {
     e.preventDefault()
+    setConfirmSave(true)
+  }
+
+  const handleConfirmSave = async () => {
+    setSavingProduct(true)
     try {
       let categoryId = formData.categoryId
 
@@ -130,7 +141,7 @@ export function Products({ user }: { user?: any } = {}) {
       setShowNewCategory(false)
     } catch (err: any) {
       addToast({ title: 'Error al guardar', description: err.message || 'Verifica que el SKU no esté duplicado', variant: 'error' })
-    }
+    } finally { setSavingProduct(false); setConfirmSave(false) }
   }
 
   const handleEdit = (product: Product) => {
@@ -150,14 +161,15 @@ export function Products({ user }: { user?: any } = {}) {
     setIsDialogOpen(true)
   }
 
-  const handleDelete = async (id: string, name: string) => {
+  const handleDelete = async () => {
+    if (!deleteProduct) return
     try {
-      await api.products.delete(id)
-      setProducts(products.filter(p => p.id !== id))
-      addToast({ title: 'Producto eliminado', description: name, variant: 'success' })
+      await api.products.delete(deleteProduct.id)
+      setProducts(products.filter(p => p.id !== deleteProduct.id))
+      addToast({ title: 'Producto eliminado', description: deleteProduct.name, variant: 'success' })
     } catch (err: any) {
       addToast({ title: 'Error al eliminar', description: err.message, variant: 'error' })
-    }
+    } finally { setDeleteProduct(null) }
   }
 
   const handleExport = async () => {
@@ -190,7 +202,7 @@ export function Products({ user }: { user?: any } = {}) {
               <DialogHeader>
                 <DialogTitle>{editingProduct ? 'Editar Producto' : 'Nuevo Producto'}</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={requestSave} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <label className="text-sm font-medium text-foreground">Nombre del Producto</label>
@@ -309,7 +321,7 @@ export function Products({ user }: { user?: any } = {}) {
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(product)} className="text-muted-foreground hover:text-primary">
                           <Edit2 className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(product.id, product.name)} className="text-muted-foreground hover:text-destructive">
+                        <Button variant="ghost" size="icon" onClick={() => setDeleteProduct(product)} className="text-muted-foreground hover:text-destructive">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -335,14 +347,7 @@ export function Products({ user }: { user?: any } = {}) {
                 {editingCategory?.id === cat.id ? (
                   <div className="flex gap-2 flex-1">
                     <Input value={editingCategory.name} onChange={e => setEditingCategory({ ...editingCategory, name: e.target.value })} />
-                    <Button size="sm" onClick={async () => {
-                      try {
-                        await api.categories.update(cat.id, { name: editingCategory.name })
-                        setCategories(categories.map(c => c.id === cat.id ? editingCategory : c))
-                        setEditingCategory(null)
-                        addToast({ title: 'Categoría actualizada', variant: 'success' })
-                      } catch (err: any) { addToast({ title: 'Error', description: err.message, variant: 'error' }) }
-                    }}>Guardar</Button>
+                    <Button size="sm" onClick={() => setConfirmCategoryUpdate(true)}>Guardar</Button>
                     <Button size="sm" variant="outline" onClick={() => setEditingCategory(null)}>Cancelar</Button>
                   </div>
                 ) : (
@@ -350,13 +355,7 @@ export function Products({ user }: { user?: any } = {}) {
                     <span className="font-medium">{cat.name}</span>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="icon" onClick={() => setEditingCategory(cat)}><Edit2 className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={async () => {
-                        try {
-                          await api.categories.delete(cat.id)
-                          setCategories(categories.filter(c => c.id !== cat.id))
-                          addToast({ title: 'Categoría eliminada', variant: 'success' })
-                        } catch (err: any) { addToast({ title: 'Error', description: err.message, variant: 'error' }) }
-                      }}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => setDeleteCategory(cat)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                     </div>
                   </>
                 )}
@@ -365,6 +364,56 @@ export function Products({ user }: { user?: any } = {}) {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmSave}
+        onOpenChange={setConfirmSave}
+        title={editingProduct ? 'Guardar cambios' : 'Crear producto'}
+        description={editingProduct ? `¿Guardar los cambios en "${formData.name}"?` : `¿Crear el producto "${formData.name}"?`}
+        loading={savingProduct}
+        onConfirm={handleConfirmSave}
+      />
+
+      <ConfirmDialog
+        open={!!deleteProduct}
+        onOpenChange={() => setDeleteProduct(null)}
+        title="Eliminar producto"
+        description={`¿Eliminar "${deleteProduct?.name}" (${deleteProduct?.sku})? Esta acción no se puede deshacer.`}
+        confirmText="Sí, eliminar"
+        onConfirm={handleDelete}
+      />
+
+      <ConfirmDialog
+        open={confirmCategoryUpdate && !!editingCategory}
+        onOpenChange={() => setConfirmCategoryUpdate(false)}
+        title="Guardar categoría"
+        description={`¿Renombrar la categoría a "${editingCategory?.name}"?`}
+        onConfirm={async () => {
+          if (!editingCategory) return
+          try {
+            await api.categories.update(editingCategory.id, { name: editingCategory.name })
+            setCategories(categories.map(c => c.id === editingCategory.id ? editingCategory : c))
+            setEditingCategory(null)
+            addToast({ title: 'Categoría actualizada', variant: 'success' })
+          } catch (err: any) { addToast({ title: 'Error', description: err.message, variant: 'error' }) } finally { setConfirmCategoryUpdate(false) }
+        }}
+      />
+
+      <ConfirmDialog
+        open={!!deleteCategory}
+        onOpenChange={() => setDeleteCategory(null)}
+        title="Eliminar categoría"
+        description={`¿Eliminar la categoría "${deleteCategory?.name}"? Esta acción no se puede deshacer.`}
+        confirmText="Sí, eliminar"
+        onConfirm={async () => {
+          if (!deleteCategory) return
+          try {
+            await api.categories.delete(deleteCategory.id)
+            setCategories(categories.filter(c => c.id !== deleteCategory.id))
+            addToast({ title: 'Categoría eliminada', variant: 'success' })
+          } catch (err: any) { addToast({ title: 'Error', description: err.message, variant: 'error' }) } finally { setDeleteCategory(null) }
+        }}
+      />
     </div>
   )
 }
