@@ -14,12 +14,6 @@ type Toast = {
   variant?: ToastVariant
 }
 
-type ToastAction = {
-  type: 'ADD_TOAST' | 'DISMISS_TOAST' | 'REMOVE_TOAST'
-  toast?: Toast
-  toastId?: string
-}
-
 interface ToastContextType {
   toasts: Toast[]
   addToast: (toast: Omit<Toast, 'id'>) => void
