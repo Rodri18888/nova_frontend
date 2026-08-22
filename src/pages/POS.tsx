@@ -8,12 +8,13 @@ import api from '@/lib/api'
 import { Factura } from '@/components/Factura'
 import { useToast } from '@/hooks/use-toast'
 import type { UserSession } from '@/App'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 interface Product { id: string; name: string; sku: string; barcode?: string; price: number; stock: number; size: string | null; color: string | null }
 interface Customer { id: string; name: string; phone: string | null }
 interface CartItem { product: Product; quantity: number; discount: number }
 
-export function POS({ user }: { user: UserSession }) {
+export function POS({ user: _user }: { user: UserSession }) {
   const { addToast } = useToast()
   const [products, setProducts] = useState<Product[]>([])
   const [customers, setCustomers] = useState<Customer[]>([])
@@ -28,6 +29,7 @@ export function POS({ user }: { user: UserSession }) {
   const [lastSale, setLastSale] = useState<any>(null)
   const [globalDiscount, setGlobalDiscount] = useState(0)
   const [showFactura, setShowFactura] = useState(false)
+  const [confirmCheckout, setConfirmCheckout] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { loadData() }, [])
@@ -89,7 +91,13 @@ export function POS({ user }: { user: UserSession }) {
   const tax = taxable * 0.19
   const total = taxable + tax
 
+  const requestCheckout = () => {
+    if (cart.length === 0 || processing) return
+    setConfirmCheckout(true)
+  }
+
   const handleCheckout = async () => {
+    setConfirmCheckout(false)
     if (cart.length === 0 || processing) return
     setProcessing(true)
     try {
@@ -119,7 +127,7 @@ export function POS({ user }: { user: UserSession }) {
     }
     if (e.key === 'F2') {
       e.preventDefault()
-      handleCheckout()
+      requestCheckout()
     }
     if (e.key === 'Escape') {
       setSearchTerm('')
@@ -237,12 +245,21 @@ export function POS({ user }: { user: UserSession }) {
             ))}
           </div>
 
-          <Button onClick={handleCheckout} disabled={cart.length === 0 || processing} className="w-full h-12 bg-emerald-400/20 hover:bg-emerald-400/30 text-emerald-300 border border-emerald-400/30">
+          <Button onClick={requestCheckout} disabled={cart.length === 0 || processing} className="w-full h-12 bg-emerald-400/20 hover:bg-emerald-400/30 text-emerald-300 border border-emerald-400/30">
             {processing ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Receipt className="w-5 h-5 mr-2" />}
             {processing ? 'Procesando...' : 'Cobrar (F2)'}
           </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmCheckout}
+        onOpenChange={setConfirmCheckout}
+        title="Cobrar venta"
+        description={`${cart.length} artículo(s) por un total de ${formatCurrency(total)}. Método de pago: ${paymentMethod}.`}
+        confirmText="Cobrar"
+        onConfirm={handleCheckout}
+      />
     </div>
   )
 }

@@ -13,12 +13,13 @@ import {
 import {
   Warehouse, AlertTriangle, TrendingDown, TrendingUp, Package, History
 } from 'lucide-react'
-import { formatDate, formatCurrency } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
 import api from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
 import { PageHeader } from '@/components/ui/page-header'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { SearchBar } from '@/components/ui/search-bar'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 interface InventoryItem {
   id: string
@@ -45,7 +46,7 @@ interface Adjustment {
   reason: string
 }
 
-export function Inventory({ user }: { user?: any } = {}) {
+export function Inventory({ user: _user }: { user?: any } = {}) {
   const { addToast } = useToast()
   const [inventory, setInventory] = useState<InventoryItem[]>([])
   const [movements, setMovements] = useState<Movement[]>([])
@@ -59,6 +60,7 @@ export function Inventory({ user }: { user?: any } = {}) {
     quantity: '',
     reason: '',
   })
+  const [confirmAdjust, setConfirmAdjust] = useState(false)
 
   useEffect(() => { loadData() }, [])
 
@@ -93,8 +95,15 @@ export function Inventory({ user }: { user?: any } = {}) {
     return 'ok'
   }
 
-  const handleAdjustment = async (e: React.FormEvent) => {
+  const requestAdjustment = (e: React.FormEvent) => {
     e.preventDefault()
+    const qty = parseInt(adjustment.quantity)
+    if (!adjustment.productId || !qty || !adjustment.reason.trim()) return
+    setConfirmAdjust(true)
+  }
+
+  const handleAdjustment = async () => {
+    setConfirmAdjust(false)
     const qty = parseInt(adjustment.quantity)
     const item = inventory.find(i => i.id === adjustment.productId)
     if (!item) return
@@ -134,7 +143,7 @@ export function Inventory({ user }: { user?: any } = {}) {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Ajustar Inventario</DialogTitle></DialogHeader>
-              <form onSubmit={handleAdjustment} className="space-y-4">
+              <form onSubmit={requestAdjustment} className="space-y-4">
                 <div><label className="text-sm font-medium text-foreground">Producto</label>
                   <select value={adjustment.productId} onChange={(e) => setAdjustment({ ...adjustment, productId: e.target.value })} className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm" required>
                     <option value="">Seleccionar producto</option>
@@ -251,6 +260,19 @@ export function Inventory({ user }: { user?: any } = {}) {
           </table>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmAdjust}
+        onOpenChange={setConfirmAdjust}
+        title="Aplicar ajuste de inventario"
+        description={
+          inventory.find(i => i.id === adjustment.productId)
+            ? `${adjustment.type === 'add' ? 'Agregar' : 'Reducir'} ${adjustment.quantity} unidad(es) de "${inventory.find(i => i.id === adjustment.productId)?.name}". Razón: ${adjustment.reason}.`
+            : 'Selecciona un producto.'
+        }
+        confirmText="Sí, aplicar"
+        onConfirm={handleAdjustment}
+      />
     </div>
   )
 }

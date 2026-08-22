@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Warehouse, ShoppingCart, Receipt, Users,
   UserCog, RotateCcw, Wallet, Truck, TruckIcon, Tag, LogOut, Sun, Moon,
 } from 'lucide-react'
 import { useTheme } from '@/hooks/use-theme'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 
 const allNavigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard, roles: ['admin', 'vendedor'] },
@@ -35,6 +36,7 @@ interface LayoutProps {
 export function Layout({ children, user, onLogout }: LayoutProps) {
   const location = useLocation()
   const { theme, toggle } = useTheme()
+  const [confirmLogout, setConfirmLogout] = useState(false)
   const navigation = allNavigation.filter(item => item.roles.includes(user.rol))
 
   return (
@@ -86,7 +88,7 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
             </div>
           </div>
           <button
-            onClick={onLogout}
+            onClick={() => setConfirmLogout(true)}
             className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-accent/50 hover:bg-accent/80 rounded-xl text-sm text-muted-foreground hover:text-foreground transition-all border border-border"
             title="Cerrar Sesión"
           >
@@ -124,6 +126,15 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
           {children}
         </main>
       </div>
+
+      <ConfirmDialog
+        open={confirmLogout}
+        onOpenChange={setConfirmLogout}
+        title="Cerrar sesión"
+        description={`¿Seguro que quieres cerrar sesión, ${user.nombre}?`}
+        confirmText="Sí, salir"
+        onConfirm={onLogout}
+      />
     </div>
   )
 }
