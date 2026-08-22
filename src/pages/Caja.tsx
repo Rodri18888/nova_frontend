@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Wallet, ArrowUpRight, ArrowDownRight } from 'lucide-react'
+import { ArrowUpRight } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import api from '@/lib/api'
 import { useToast } from '@/hooks/use-toast'
@@ -13,7 +13,7 @@ import { PageHeader } from '@/components/ui/page-header'
 
 interface CashRegister { id: string; initialAmount: number; expectedAmount?: number; realAmount?: number; totalSales: number; totalReturns: number; status: string; user?: any; movements: any[]; openDate: string; closeDate?: string }
 
-export function Caja({ user }: { user: UserSession }) {
+export function Caja({ user: _user }: { user: UserSession }) {
   const { addToast } = useToast()
   const [current, setCurrent] = useState<CashRegister | null>(null)
   const [history, setHistory] = useState<CashRegister[]>([])
