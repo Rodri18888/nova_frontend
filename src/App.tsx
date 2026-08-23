@@ -13,7 +13,6 @@ import { Devoluciones } from './pages/Devoluciones'
 import { Caja } from './pages/Caja'
 import { Compras } from './pages/Compras'
 import { Proveedores } from './pages/Proveedores'
-import { Etiquetas } from './pages/Etiquetas'
 
 import { Toaster } from './components/ui/toaster'
 import { ToastProvider } from './hooks/use-toast'
@@ -86,7 +85,6 @@ function App() {
               <Route path="/caja" element={<Caja user={user} />} />
               <Route path="/compras" element={<Compras user={user} />} />
               <Route path="/proveedores" element={<Proveedores />} />
-              <Route path="/etiquetas" element={<Etiquetas />} />
 
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
