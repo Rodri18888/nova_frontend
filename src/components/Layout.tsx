@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Warehouse, ShoppingCart, Receipt, Users,
-  UserCog, RotateCcw, Wallet, Truck, TruckIcon, Tag, LogOut, Sun, Moon,
+  UserCog, RotateCcw, Wallet, Truck, TruckIcon, LogOut, Sun, Moon,
 } from 'lucide-react'
 import { useTheme } from '@/hooks/use-theme'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -18,7 +18,6 @@ const allNavigation = [
   { name: 'Caja', href: '/caja', icon: Wallet, roles: ['admin'] },
   { name: 'Compras', href: '/compras', icon: TruckIcon, roles: ['admin'] },
   { name: 'Proveedores', href: '/proveedores', icon: Truck, roles: ['admin'] },
-  { name: 'Etiquetas', href: '/etiquetas', icon: Tag, roles: ['admin', 'vendedor'] },
   { name: 'Usuarios', href: '/users', icon: UserCog, roles: ['admin'] },
 ]
 
