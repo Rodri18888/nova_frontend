@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Warehouse, ShoppingCart, Receipt, Users,
-  UserCog, RotateCcw, Wallet, Truck, TruckIcon, LogOut, Sun, Moon,
+  UserCog, RotateCcw, Wallet, Truck, TruckIcon, LogOut, Sun, Moon, Store,
 } from 'lucide-react'
 import { useTheme } from '@/hooks/use-theme'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -28,7 +28,7 @@ const rolLabels: Record<string, string> = {
 
 interface LayoutProps {
   children: React.ReactNode
-  user: { id: string; username: string; nombre: string; rol: string }
+  user: { id: string; username: string; nombre: string; rol: string; storeId: string; storeName: string }
   onLogout: () => void
 }
 
@@ -100,7 +100,11 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <header className="h-16 flex-shrink-0 bg-background flex items-center justify-end px-6 lg:px-8">
+        <header className="h-16 flex-shrink-0 bg-background flex items-center justify-between px-6 lg:px-8">
+          <div className="flex items-center gap-2.5">
+            <Store className="w-4 h-4 text-primary" />
+            <p className="text-sm font-medium text-foreground">{user.storeName}</p>
+          </div>
           <div className="flex items-center gap-2.5">
             <button
               onClick={toggle}

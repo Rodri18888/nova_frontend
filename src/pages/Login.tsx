@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 const SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || ''
 
 interface UserSession {
-  id: string; username: string; nombre: string; rol: string
+  id: string; username: string; nombre: string; rol: string; storeId: string; storeName: string
 }
 
 interface LoginProps {
@@ -17,11 +17,14 @@ interface LoginProps {
 
 export function Login({ onLogin }: LoginProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [subMode, setSubMode] = useState<'join' | 'create'>('join')
   const { theme, toggle } = useTheme()
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [nombre, setNombre] = useState('')
+  const [storeCode, setStoreCode] = useState('')
+  const [storeName, setStoreName] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -39,7 +42,12 @@ export function Login({ onLogin }: LoginProps) {
     try {
       const user = mode === 'login'
         ? await api.auth.login({ username, password, captchaToken })
-        : await api.auth.register({ nombre, username, email, password, captchaToken }) as UserSession
+        : await api.auth.register({
+            nombre, email, password, captchaToken,
+            ...(subMode === 'create'
+              ? { storeName, storeCode }
+              : { username, storeCode }),
+          }) as UserSession
       localStorage.setItem('nova_user', JSON.stringify(user))
       onLogin(user)
     } catch (err: any) {
@@ -124,8 +132,57 @@ export function Login({ onLogin }: LoginProps) {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {mode === 'register' && (
+              <>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setSubMode('join'); setError('') }}
+                    className={`flex-1 h-10 rounded-xl text-sm font-medium transition-all ${subMode === 'join' ? 'bg-accent/70 text-accent-foreground border border-border' : 'bg-card border border-border text-muted-foreground hover:text-foreground'}`}
+                  >
+                    Unirme a una tienda
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setSubMode('create'); setError('') }}
+                    className={`flex-1 h-10 rounded-xl text-sm font-medium transition-all ${subMode === 'create' ? 'bg-accent/70 text-accent-foreground border border-border' : 'bg-card border border-border text-muted-foreground hover:text-foreground'}`}
+                  >
+                    Crear mi tienda
+                  </button>
+                </div>
+
+                {subMode === 'create' && (
+                  <div>
+                    <label className="block text-xs font-medium text-muted-foreground mb-2 tracking-wider uppercase">Nombre de la tienda</label>
+                    <input
+                      type="text"
+                      value={storeName}
+                      onChange={(e) => setStoreName(e.target.value)}
+                      className="w-full h-12 px-4 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-all"
+                      placeholder="Mi Tienda"
+                      required
+                    />
+                  </div>
+                )}
+              </>
+            )}
+
+            {mode === 'register' && (
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-2 tracking-wider uppercase">Nombre completo</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-2 tracking-wider uppercase">Código de tienda</label>
+                <input
+                  type="text"
+                  value={storeCode}
+                  onChange={(e) => setStoreCode(e.target.value)}
+                  className="w-full h-12 px-4 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-all"
+                  placeholder={subMode === 'create' ? 'Código único de tu tienda' : 'Código de la tienda'}
+                  required
+                />
+              </div>
+            )}
+
+            {mode === 'register' && (
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-2 tracking-wider uppercase">{subMode === 'create' ? 'Nombre del dueño' : 'Nombre completo'}</label>
                 <input
                   type="text"
                   value={nombre}
@@ -146,15 +203,15 @@ export function Login({ onLogin }: LoginProps) {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full h-12 pl-11 pr-4 bg-card border border-border rounded-xl text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-all"
-                  placeholder="Tu usuario"
-                  required
+                  placeholder={subMode === 'create' ? 'Tu usuario (opcional)' : 'Tu usuario'}
+                  required={subMode !== 'create'}
                 />
               </div>
             </div>
 
             {mode === 'register' && (
               <div>
-                <label className="block text-xs font-medium text-muted-foreground mb-2 tracking-wider uppercase">Correo electrónico</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-2 tracking-wider uppercase">{subMode === 'create' ? 'Correo del dueño' : 'Correo electrónico'}</label>
                 <input
                   type="email"
                   value={email}
