@@ -9,10 +9,26 @@ import { Factura } from '@/components/Factura'
 import { useToast } from '@/hooks/use-toast'
 import type { UserSession } from '@/App'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements, CardElement, useElements } from '@stripe/react-stripe-js'
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
 interface Product { id: string; name: string; sku: string; barcode?: string; price: number; stock: number; size: string | null; color: string | null }
 interface Customer { id: string; name: string; phone: string | null }
 interface CartItem { product: Product; quantity: number; discount: number }
+
+function StripeCardField({ onReady }: { onReady: (el: any) => void }) {
+  const elements = useElements()
+  useEffect(() => {
+    if (elements) onReady(elements.getElement(CardElement))
+  }, [elements, onReady])
+  return (
+    <CardElement
+      options={{ style: { base: { fontSize: '16px' } } }}
+    />
+  )
+}
 
 export function POS({ user: _user }: { user: UserSession }) {
   const { addToast } = useToast()
@@ -25,6 +41,7 @@ export function POS({ user: _user }: { user: UserSession }) {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [paymentMethod, setPaymentMethod] = useState<'Efectivo' | 'Tarjeta' | 'Transferencia'>('Efectivo')
   const [processing, setProcessing] = useState(false)
+  const [cardElement, setCardElement] = useState<any>(null)
   const [saleSuccess, setSaleSuccess] = useState(false)
   const [lastSale, setLastSale] = useState<any>(null)
   const [globalDiscount, setGlobalDiscount] = useState(0)
@@ -97,27 +114,62 @@ export function POS({ user: _user }: { user: UserSession }) {
   }
 
   const handleCheckout = async () => {
-    setConfirmCheckout(false)
-    if (cart.length === 0 || processing) return
-    setProcessing(true)
+    setConfirmCheckout(false);
+    if (cart.length === 0 || processing) return;
+    setProcessing(true);
     try {
+      let paymentIntentId: string | undefined;
+      if (paymentMethod === "Tarjeta") {
+        const stripe = await stripePromise;
+        if (!stripe) throw new Error("Stripe no cargó");
+        if (!cardElement) throw new Error("Ingresa los datos de la tarjeta");
+        const { clientSecret } = await api.payments.createIntent(total);
+        const { error, paymentIntent } = await stripe.confirmCardPayment(
+          clientSecret,
+          {
+            payment_method: { card: cardElement },
+          },
+        );
+        if (error) throw new Error(error.message);
+        paymentIntentId = paymentIntent.id;
+      }
+
       const sale = await api.sales.create({
         customerId: selectedCustomer?.id || null,
         paymentMethod,
-        items: cart.map(i => ({ productId: i.product.id, quantity: i.quantity, price: i.product.price, discount: i.discount })),
-        subtotal, tax, total, discount: discountTotal,
-      })
-      setLastSale(sale)
-      setSaleSuccess(true)
+        items: cart.map((i) => ({
+          productId: i.product.id,
+          quantity: i.quantity,
+          price: i.product.price,
+          discount: i.discount,
+        })),
+        subtotal,
+        tax,
+        total,
+        discount: discountTotal,
+        paymentIntentId,
+      });
+      setLastSale(sale);
+      setSaleSuccess(true);
       setTimeout(() => {
-        setCart([]); setSelectedCustomer(null); setCustomerSearch(''); setGlobalDiscount(0)
-        setSaleSuccess(false); setShowFactura(true)
-        loadData()
-      }, 1500)
+        setCart([]);
+        setSelectedCustomer(null);
+        setCustomerSearch("");
+        setGlobalDiscount(0);
+        setSaleSuccess(false);
+        setShowFactura(true);
+        loadData();
+      }, 1500);
     } catch (err: any) {
-      addToast({ title: 'Error al procesar la venta', description: err.message, variant: 'error' })
-    } finally { setProcessing(false) }
-  }
+      addToast({
+        title: "Error al procesar la venta",
+        description: err.message,
+        variant: "error",
+      });
+    } finally {
+      setProcessing(false);
+    }
+  };
 
   // Keyboard shortcuts
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -153,25 +205,47 @@ export function POS({ user: _user }: { user: UserSession }) {
         <div className="mb-4 space-y-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input ref={searchRef} placeholder="Buscar productos por nombre, SKU o código de barras..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10 h-12" />
+            <Input
+              ref={searchRef}
+              placeholder="Buscar productos por nombre, SKU o código de barras..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-12"
+            />
           </div>
         </div>
         <div className="flex-1 overflow-auto">
           <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filteredProducts.map(product => (
-              <Card key={product.id} className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02]" onClick={() => addToCart(product)}>
+            {filteredProducts.map((product) => (
+              <Card
+                key={product.id}
+                className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
+                onClick={() => addToCart(product)}
+              >
                 <CardContent className="p-4">
-                  <div className="aspect-square bg-violet-400/10 border border-violet-400/20 rounded-xl mb-3 flex items-center justify-center"><Package className="w-12 h-12 text-violet-300/80" /></div>
-                  <h3 className="font-semibold text-foreground text-sm mb-1 truncate">{product.name}</h3>
-                  <p className="text-xs text-muted-foreground mb-3">{product.size || '-'} / {product.color || '-'}</p>
+                  <div className="aspect-square bg-violet-400/10 border border-violet-400/20 rounded-xl mb-3 flex items-center justify-center">
+                    <Package className="w-12 h-12 text-violet-300/80" />
+                  </div>
+                  <h3 className="font-semibold text-foreground text-sm mb-1 truncate">
+                    {product.name}
+                  </h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    {product.size || "-"} / {product.color || "-"}
+                  </p>
                   <div className="flex items-end justify-between">
                     <div>
                       <p className="text-xs text-muted-foreground">Precio</p>
-                      <span className="text-lg font-bold text-violet-300">{formatCurrency(product.price)}</span>
+                      <span className="text-lg font-bold text-violet-300">
+                        {formatCurrency(product.price)}
+                      </span>
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-muted-foreground">Stock</p>
-                      <span className={`font-semibold text-sm ${product.stock < 10 ? 'text-destructive' : 'text-foreground'}`}>{product.stock}</span>
+                      <span
+                        className={`font-semibold text-sm ${product.stock < 10 ? "text-destructive" : "text-foreground"}`}
+                      >
+                        {product.stock}
+                      </span>
                     </div>
                   </div>
                 </CardContent>
@@ -183,71 +257,188 @@ export function POS({ user: _user }: { user: UserSession }) {
 
       <div className="w-96 bg-card rounded-2xl shadow-xl flex flex-col border border-border">
         <div className="p-6 border-b bg-primary/15 border-primary/25 rounded-t-2xl">
-          <div className="flex items-center gap-3"><ShoppingCart className="w-6 h-6 text-primary" /><h2 className="text-xl font-bold text-foreground">Carrito</h2></div>
-          <p className="text-muted-foreground text-sm mt-1">{cart.length} artículos</p>
+          <div className="flex items-center gap-3">
+            <ShoppingCart className="w-6 h-6 text-primary" />
+            <h2 className="text-xl font-bold text-foreground">Carrito</h2>
+          </div>
+          <p className="text-muted-foreground text-sm mt-1">
+            {cart.length} artículos
+          </p>
         </div>
 
         <div className="flex-1 overflow-auto p-4 space-y-3">
           {cart.length === 0 ? (
-            <div className="text-center py-12"><ShoppingCart className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" /><p className="text-muted-foreground">Carrito vacío</p></div>
-          ) : cart.map(item => (
-            <div key={item.product.id} className="p-3 bg-muted/50 rounded-xl space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-violet-400/20 border border-violet-400/30 rounded-lg flex items-center justify-center text-violet-200 font-bold text-sm">{item.product.name.charAt(0)}</div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground text-sm truncate">{item.product.name}</p>
-                  <p className="text-xs text-muted-foreground">{formatCurrency(item.product.price)} c/u</p>
-                </div>
-                <button onClick={() => removeFromCart(item.product.id)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <button onClick={() => updateQuantity(item.product.id, -1)} className="w-7 h-7 bg-muted rounded-full flex items-center justify-center hover:bg-accent"><Minus className="w-3 h-3" /></button>
-                  <span className="w-8 text-center font-medium text-sm">{item.quantity}</span>
-                  <button onClick={() => updateQuantity(item.product.id, 1)} className="w-7 h-7 bg-primary/20 text-primary rounded-full flex items-center justify-center hover:bg-primary/30"><Plus className="w-3 h-3" /></button>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Percent className="w-3 h-3 text-muted-foreground" />
-                  <input type="number" value={item.discount} onChange={e => updateItemDiscount(item.product.id, e.target.value === '' ? 0 : parseFloat(e.target.value) || 0)} className="w-16 h-7 text-xs text-right border rounded px-1" min="0" step="10" />
-                </div>
-                <span className="font-semibold text-sm">{formatCurrency((item.product.price - item.discount) * item.quantity)}</span>
-              </div>
+            <div className="text-center py-12">
+              <ShoppingCart className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
+              <p className="text-muted-foreground">Carrito vacío</p>
             </div>
-          ))}
+          ) : (
+            cart.map((item) => (
+              <div
+                key={item.product.id}
+                className="p-3 bg-muted/50 rounded-xl space-y-2"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-violet-400/20 border border-violet-400/30 rounded-lg flex items-center justify-center text-violet-200 font-bold text-sm">
+                    {item.product.name.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground text-sm truncate">
+                      {item.product.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatCurrency(item.product.price)} c/u
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => removeFromCart(item.product.id)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => updateQuantity(item.product.id, -1)}
+                      className="w-7 h-7 bg-muted rounded-full flex items-center justify-center hover:bg-accent"
+                    >
+                      <Minus className="w-3 h-3" />
+                    </button>
+                    <span className="w-8 text-center font-medium text-sm">
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() => updateQuantity(item.product.id, 1)}
+                      className="w-7 h-7 bg-primary/20 text-primary rounded-full flex items-center justify-center hover:bg-primary/30"
+                    >
+                      <Plus className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Percent className="w-3 h-3 text-muted-foreground" />
+                    <input
+                      type="number"
+                      value={item.discount}
+                      onChange={(e) =>
+                        updateItemDiscount(
+                          item.product.id,
+                          e.target.value === ""
+                            ? 0
+                            : parseFloat(e.target.value) || 0,
+                        )
+                      }
+                      className="w-16 h-7 text-xs text-right border rounded px-1"
+                      min="0"
+                      step="10"
+                    />
+                  </div>
+                  <span className="font-semibold text-sm">
+                    {formatCurrency(
+                      (item.product.price - item.discount) * item.quantity,
+                    )}
+                  </span>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         <div className="p-4 border-t space-y-3">
+          {paymentMethod === "Tarjeta" && (
+            <div>
+              <Elements stripe={stripePromise}>
+                <StripeCardField onReady={setCardElement} />
+              </Elements>
+              <p className="text-[11px] text-muted-foreground mt-2">
+                Prueba: 4242 4242 4242 4242 · cualquier fecha futura · CVC 123
+              </p>
+            </div>
+          )}
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1"><User className="w-3 h-3" /> Cliente</label>
-            <Input placeholder="Buscar cliente..." value={customerSearch} onChange={e => { setCustomerSearch(e.target.value); setSelectedCustomer(null) }} className="h-9 text-sm" />
-            {customerSearch && !selectedCustomer && filteredCustomers.length > 0 && (
-              <div className="mt-1 bg-card border border-border rounded-lg shadow-lg max-h-32 overflow-auto">
-                {filteredCustomers.slice(0, 5).map(c => (
-                  <button key={c.id} onClick={() => { setSelectedCustomer(c); setCustomerSearch(c.name) }} className="w-full text-left px-3 py-2 hover:bg-accent/50 text-sm">{c.name}</button>
-                ))}
-              </div>
-            )}
+            <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
+              <User className="w-3 h-3" /> Cliente
+            </label>
+            <Input
+              placeholder="Buscar cliente..."
+              value={customerSearch}
+              onChange={(e) => {
+                setCustomerSearch(e.target.value);
+                setSelectedCustomer(null);
+              }}
+              className="h-9 text-sm"
+            />
+            {customerSearch &&
+              !selectedCustomer &&
+              filteredCustomers.length > 0 && (
+                <div className="mt-1 bg-card border border-border rounded-lg shadow-lg max-h-32 overflow-auto">
+                  {filteredCustomers.slice(0, 5).map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => {
+                        setSelectedCustomer(c);
+                        setCustomerSearch(c.name);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-accent/50 text-sm"
+                    >
+                      {c.name}
+                    </button>
+                  ))}
+                </div>
+              )}
           </div>
 
           <div className="space-y-1 text-sm">
-            <div className="flex justify-between text-muted-foreground"><span>Subtotal</span><span>{formatCurrency(subtotal)}</span></div>
-            {discountTotal > 0 && <div className="flex justify-between text-destructive"><span>Descuento</span><span>-{formatCurrency(discountTotal)}</span></div>}
-            <div className="flex justify-between text-muted-foreground"><span>IVA (19%)</span><span>{formatCurrency(tax)}</span></div>
-            <div className="flex justify-between text-xl font-bold text-foreground pt-2 border-t"><span>Total</span><span className="text-primary">{formatCurrency(total)}</span></div>
+            <div className="flex justify-between text-muted-foreground">
+              <span>Subtotal</span>
+              <span>{formatCurrency(subtotal)}</span>
+            </div>
+            {discountTotal > 0 && (
+              <div className="flex justify-between text-destructive">
+                <span>Descuento</span>
+                <span>-{formatCurrency(discountTotal)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-muted-foreground">
+              <span>IVA (19%)</span>
+              <span>{formatCurrency(tax)}</span>
+            </div>
+            <div className="flex justify-between text-xl font-bold text-foreground pt-2 border-t">
+              <span>Total</span>
+              <span className="text-primary">{formatCurrency(total)}</span>
+            </div>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            {(['Efectivo', 'Tarjeta', 'Transferencia'] as const).map(m => (
-              <button key={m} onClick={() => setPaymentMethod(m)} className={`p-2 rounded-lg border-2 text-xs font-medium transition-all ${paymentMethod === m ? 'border-primary/50 bg-primary/15 text-primary' : 'border-border text-muted-foreground hover:border-primary/30'}`}>
-                {m === 'Efectivo' ? <Banknote className="w-4 h-4 mx-auto mb-1" /> : m === 'Tarjeta' ? <CreditCard className="w-4 h-4 mx-auto mb-1" /> : <Receipt className="w-4 h-4 mx-auto mb-1" />}
+            {(["Efectivo", "Tarjeta", "Transferencia"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setPaymentMethod(m)}
+                className={`p-2 rounded-lg border-2 text-xs font-medium transition-all ${paymentMethod === m ? "border-primary/50 bg-primary/15 text-primary" : "border-border text-muted-foreground hover:border-primary/30"}`}
+              >
+                {m === "Efectivo" ? (
+                  <Banknote className="w-4 h-4 mx-auto mb-1" />
+                ) : m === "Tarjeta" ? (
+                  <CreditCard className="w-4 h-4 mx-auto mb-1" />
+                ) : (
+                  <Receipt className="w-4 h-4 mx-auto mb-1" />
+                )}
                 {m}
               </button>
             ))}
           </div>
 
-          <Button onClick={requestCheckout} disabled={cart.length === 0 || processing} className="w-full h-12 bg-emerald-400/20 hover:bg-emerald-400/30 text-emerald-300 border border-emerald-400/30">
-            {processing ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Receipt className="w-5 h-5 mr-2" />}
-            {processing ? 'Procesando...' : 'Cobrar (F2)'}
+          <Button
+            onClick={requestCheckout}
+            disabled={cart.length === 0 || processing}
+            className="w-full h-12 bg-emerald-400/20 hover:bg-emerald-400/30 text-emerald-300 border border-emerald-400/30"
+          >
+            {processing ? (
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+            ) : (
+              <Receipt className="w-5 h-5 mr-2" />
+            )}
+            {processing ? "Procesando..." : "Cobrar (F2)"}
           </Button>
         </div>
       </div>
@@ -261,5 +452,5 @@ export function POS({ user: _user }: { user: UserSession }) {
         onConfirm={handleCheckout}
       />
     </div>
-  )
+  );
 }
