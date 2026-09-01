@@ -288,6 +288,8 @@ const api = {
   payments: {
   createIntent: (amount: number) =>
     apiFetch('/api/payments/intent', { method: 'POST', body: JSON.stringify({ amount }) }),
+  refund: (saleId: string) =>
+    apiFetch('/api/payments/refund', { method: 'POST', body: JSON.stringify({ saleId }) }),
 },
 };
 
