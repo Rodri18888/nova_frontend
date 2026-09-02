@@ -76,7 +76,7 @@ export function Factura({ sale, onClose }: FacturaProps) {
               {sale.items.map((item: any, idx: number) => (
                 <tr key={idx} style={{ borderBottom: '1px dashed #999', color: '#000' }}>
                   <td className="py-2" style={{ color: '#000' }}>{item.quantity}</td>
-                  <td className="py-2" style={{ color: '#000' }}>{item.product?.name || 'N/A'}{item.product?.size ? ` (${item.product.size})` : ''}</td>
+                  <td className="py-2" style={{ color: '#000' }}>{item.product?.name || 'N/A'}{item.product?.size?.length ? ` (${item.product.size.join(', ')})` : ''}</td>
                   <td className="py-2 text-right" style={{ color: '#000' }}>{formatCurrency(item.price)}</td>
                   <td className="py-2 text-right" style={{ color: '#000' }}>{item.discount > 0 ? `-${formatCurrency(item.discount)}` : '-'}</td>
                   <td className="py-2 text-right font-bold" style={{ color: '#000' }}>{formatCurrency(item.subtotal)}</td>

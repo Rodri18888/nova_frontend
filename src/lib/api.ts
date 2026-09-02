@@ -156,21 +156,6 @@ const api = {
         body: JSON.stringify({ quantity }),
       }),
   },
-  categories: {
-    list: () => apiFetch("/api/categories"),
-    create: (data: { name: string }) =>
-      apiFetch("/api/categories", {
-        method: "POST",
-        body: JSON.stringify(data),
-      }),
-    update: (id: string, data: { name: string }) =>
-      apiFetch(`/api/categories/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      }),
-    delete: (id: string) =>
-      apiFetch(`/api/categories/${id}`, { method: "DELETE" }),
-  },
   customers: {
     list: () => apiFetch("/api/customers"),
     create: (data: Record<string, unknown>) =>
