@@ -14,7 +14,7 @@ import { Elements, CardElement, useElements } from '@stripe/react-stripe-js'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
-interface Product { id: string; name: string; sku: string; barcode?: string; price: number; stock: number; size: string | null; color: string | null }
+interface Product { id: string; name: string; sku: string; barcode?: string; price: number; stock: number; size: string[] | null; color: string[] | null }
 interface Customer { id: string; name: string; phone: string | null }
 interface CartItem { product: Product; quantity: number; discount: number }
 
@@ -230,7 +230,7 @@ export function POS({ user: _user }: { user: UserSession }) {
                     {product.name}
                   </h3>
                   <p className="text-xs text-muted-foreground mb-3">
-                    {product.size || "-"} / {product.color || "-"}
+                    {(product.size && product.size.length ? product.size.join(', ') : '-')} / {(product.color && product.color.length ? product.color.join(', ') : '-')}
                   </p>
                   <div className="flex items-end justify-between">
                     <div>

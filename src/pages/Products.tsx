@@ -11,7 +11,7 @@ import {
   DialogFooter
 } from '@/components/ui/dialog'
 import {
-  Plus, Edit2, Trash2, Package, Download
+  Plus, Edit2, Trash2, Package, Download, ChevronDown, ChevronUp, Check
 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import api from '@/lib/api'
@@ -30,29 +30,36 @@ interface Product {
   price: number
   cost: number
   stock: number
-  size: string | null
-  color: string | null
-  categoryId: string
-  category: { id: string; name: string } | null
+  minStock?: number
+  size: string[] | null
+  color: string[] | null
+  material: string[] | null
+  type: string | null
 }
 
-interface Category {
-  id: string
-  name: string
+interface MultiField {
+  label: string
+  key: 'size' | 'color' | 'material'
+  options: string[]
+  placeholder: string
 }
+
+const DEFAULT_FIELDS: MultiField[] = [
+  { label: 'Color', key: 'color', options: ['Azul', 'Rojo', 'Verde'], placeholder: 'Ej: Amarillo' },
+  { label: 'Talla', key: 'size', options: ['S', 'M', 'L', 'XL'], placeholder: 'Ej: XXL' },
+  { label: 'Material', key: 'material', options: ['Plástico', 'Madera', 'Algodón'], placeholder: 'Ej: Cuero' },
+]
+
+const DEFAULT_TYPES = ['Ropa', 'Electrónica', 'Comestible', 'Accesorio']
 
 export function Products({ user: _user }: { user?: any } = {}) {
   const { addToast } = useToast()
   const [products, setProducts] = useState<Product[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-  const [newCategoryName, setNewCategoryName] = useState('')
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-  const [showNewCategory, setShowNewCategory] = useState(false)
-  const [showCategoryDialog, setShowCategoryDialog] = useState(false)
+  const [showCharacteristics, setShowCharacteristics] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     sku: '',
@@ -61,26 +68,24 @@ export function Products({ user: _user }: { user?: any } = {}) {
     price: '',
     cost: '',
     stock: '',
-    categoryId: '',
-    size: '',
-    color: '',
+    type: '',
+  })
+  const [selected, setSelected] = useState<Record<'size' | 'color' | 'material', string[]>>({ size: [], color: [], material: [] })
+  const [newOption, setNewOption] = useState<Record<'size' | 'color' | 'material', string>>({ size: '', color: '', material: '' })
+  const [options, setOptions] = useState<Record<'size' | 'color' | 'material', string[]>>({
+    size: ['S', 'M', 'L', 'XL'],
+    color: ['Azul', 'Rojo', 'Verde', 'Amarillo', 'Negro', 'Blanco', 'Gris', 'Rosa', 'Morado', 'Naranja', 'Celeste', 'Cafe' ],
+    material: ['Plástico', 'Madera', 'Algodón', 'Cuero', 'Metal', 'Vidrio', 'Cerámica', 'Lana', 'Seda', 'Nylon', 'Poliéster'],
   })
   const [confirmSave, setConfirmSave] = useState(false)
   const [savingProduct, setSavingProduct] = useState(false)
   const [deleteProduct, setDeleteProduct] = useState<Product | null>(null)
-  const [confirmCategoryUpdate, setConfirmCategoryUpdate] = useState(false)
-  const [deleteCategory, setDeleteCategory] = useState<Category | null>(null)
 
   useEffect(() => { loadData() }, [])
 
   async function loadData() {
     try {
-      const [productsData, categoriesData] = await Promise.all([
-        api.products.list(),
-        api.categories.list(),
-      ])
-      setProducts(productsData as Product[])
-      setCategories(categoriesData as Category[])
+      setProducts(await api.products.list() as Product[])
     } catch (err) {
       console.error('Error loading data:', err)
     } finally {
@@ -91,8 +96,11 @@ export function Products({ user: _user }: { user?: any } = {}) {
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.barcode?.toLowerCase().includes(searchTerm.toLowerCase())
+    product.barcode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (product.material || []).join(' ').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (product.type || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (product.color || []).join(' ').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (product.size || []).join(' ').toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const requestSave = (e: React.FormEvent) => {
@@ -103,23 +111,16 @@ export function Products({ user: _user }: { user?: any } = {}) {
   const handleConfirmSave = async () => {
     setSavingProduct(true)
     try {
-      let categoryId = formData.categoryId
-
-      if (showNewCategory && newCategoryName.trim()) {
-        const newCat = await api.categories.create({ name: newCategoryName.trim() }) as Category
-        categoryId = newCat.id
-        setCategories([...categories, newCat])
-      }
-
       const productData: any = {
         name: formData.name,
         sku: formData.sku,
         price: parseFloat(formData.price),
         cost: parseFloat(formData.cost),
         stock: parseInt(formData.stock) || 0,
-        categoryId: categoryId || null,
-        size: formData.size || undefined,
-        color: formData.color || undefined,
+        size: selected.size,
+        color: selected.color,
+        material: selected.material,
+        type: formData.type || undefined,
         barcode: formData.barcode || undefined,
         description: formData.description || undefined,
       }
@@ -136,12 +137,17 @@ export function Products({ user: _user }: { user?: any } = {}) {
 
       setIsDialogOpen(false)
       setEditingProduct(null)
-      setFormData({ name: '', sku: '', barcode: '', description: '', price: '', cost: '', stock: '', categoryId: '', size: '', color: '' })
-      setNewCategoryName('')
-      setShowNewCategory(false)
+      resetForm()
     } catch (err: any) {
       addToast({ title: 'Error al guardar', description: err.message || 'Verifica que el SKU no esté duplicado', variant: 'error' })
     } finally { setSavingProduct(false); setConfirmSave(false) }
+  }
+
+  const resetForm = () => {
+    setFormData({ name: '', sku: '', barcode: '', description: '', price: '', cost: '', stock: '', type: '' })
+    setSelected({ size: [], color: [], material: [] })
+    setNewOption({ size: '', color: '', material: '' })
+    setShowCharacteristics(false)
   }
 
   const handleEdit = (product: Product) => {
@@ -154,11 +160,35 @@ export function Products({ user: _user }: { user?: any } = {}) {
       price: product.price.toString(),
       cost: product.cost.toString(),
       stock: product.stock.toString(),
-      categoryId: product.categoryId || '',
-      size: product.size || '',
-      color: product.color || '',
+      type: product.type || '',
     })
+    setSelected({
+      size: product.size || [],
+      color: product.color || [],
+      material: product.material || [],
+    })
+    setShowCharacteristics(!!product.size?.length || !!product.color?.length || !!product.material?.length)
     setIsDialogOpen(true)
+  }
+
+  const toggleOption = (key: 'size' | 'color' | 'material', value: string) => {
+    setSelected(prev => ({
+      ...prev,
+      [key]: prev[key].includes(value) ? prev[key].filter(v => v !== value) : [...prev[key], value],
+    }))
+  }
+
+  const addOption = (field: MultiField) => {
+    const val = newOption[field.key].trim()
+    if (!val) return
+    if (selected[field.key].includes(val) || options[field.key].includes(val)) {
+      toggleOption(field.key, val)
+      setNewOption({ ...newOption, [field.key]: '' })
+      return
+    }
+    setOptions(prev => ({ ...prev, [field.key]: [...prev[field.key], val] }))
+    setSelected(prev => ({ ...prev, [field.key]: [...prev[field.key], val] }))
+    setNewOption({ ...newOption, [field.key]: '' })
   }
 
   const handleDelete = async () => {
@@ -188,10 +218,7 @@ export function Products({ user: _user }: { user?: any } = {}) {
         <Button variant="outline" onClick={handleExport}>
           <Download className="w-4 h-4 mr-2" /> Exportar CSV
         </Button>
-        <Button variant="outline" onClick={() => setShowCategoryDialog(true)}>
-          <Package className="w-4 h-4 mr-2" /> Categorías
-        </Button>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) { setEditingProduct(null); resetForm() } }}>
             <DialogTrigger asChild>
               <Button className="bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 hover:from-violet-700 hover:to-purple-700">
                 <Plus className="w-4 h-4 mr-2" />
@@ -221,23 +248,6 @@ export function Products({ user: _user }: { user?: any } = {}) {
                     <Input value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder="Descripción del producto..." />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground">Categoría</label>
-                    {showNewCategory ? (
-                      <div className="flex gap-2">
-                        <Input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="Nueva categoría" required />
-                        <Button type="button" variant="outline" onClick={() => setShowNewCategory(false)}>Cancelar</Button>
-                      </div>
-                    ) : (
-                      <div className="flex gap-2">
-                        <select value={formData.categoryId} onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })} className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm">
-                          <option value="">Seleccionar...</option>
-                          {categories.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
-                        </select>
-                        <Button type="button" variant="outline" onClick={() => setShowNewCategory(true)}><Plus className="w-4 h-4" /></Button>
-                      </div>
-                    )}
-                  </div>
-                  <div>
                     <label className="text-sm font-medium text-foreground">Precio de Venta ($)</label>
                     <Input type="number" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} placeholder="0.00" required />
                   </div>
@@ -250,12 +260,53 @@ export function Products({ user: _user }: { user?: any } = {}) {
                     <Input type="number" value={formData.stock} onChange={(e) => setFormData({ ...formData, stock: e.target.value })} placeholder="0" required />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground">Talla</label>
-                    <Input value={formData.size} onChange={(e) => setFormData({ ...formData, size: e.target.value })} placeholder="Ej: M" />
+                    <label className="text-sm font-medium text-foreground">Tipo</label>
+                    <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm">
+                      <option value="">Seleccionar tipo...</option>
+                      {DEFAULT_TYPES.map(t => (<option key={t} value={t}>{t}</option>))}
+                    </select>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground">Color</label>
-                    <Input value={formData.color} onChange={(e) => setFormData({ ...formData, color: e.target.value })} placeholder="Ej: Azul" />
+
+                  <div className="col-span-2">
+                    <Button type="button" variant="outline" onClick={() => setShowCharacteristics(!showCharacteristics)} className="w-full">
+                      Características adicionales
+                      {showCharacteristics ? <ChevronUp className="w-4 h-4 ml-2" /> : <ChevronDown className="w-4 h-4 ml-2" />}
+                    </Button>
+                    {showCharacteristics && (
+                      <div className="mt-4 space-y-4">
+                        {DEFAULT_FIELDS.map(field => (
+                          <div key={field.key}>
+                            <label className="text-sm font-medium text-foreground">{field.label}</label>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {options[field.key].map(opt => (
+                                <button
+                                  type="button"
+                                  key={opt}
+                                  onClick={() => toggleOption(field.key, opt)}
+                                  className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                                    selected[field.key].includes(opt)
+                                      ? 'bg-primary/20 text-primary border-primary/40'
+                                      : 'bg-background text-muted-foreground border-border hover:bg-accent'
+                                  }`}
+                                >
+                                  {opt}
+                                  {selected[field.key].includes(opt) && <Check className="w-3.5 h-3.5 inline ml-1" />}
+                                </button>
+                              ))}
+                            </div>
+                            <div className="flex gap-2 mt-2">
+                              <Input
+                                value={newOption[field.key]}
+                                onChange={(e) => setNewOption({ ...newOption, [field.key]: e.target.value })}
+                                placeholder={`Agregar nuevo: ${field.placeholder}`}
+                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addOption(field) } }}
+                              />
+                              <Button type="button" variant="outline" onClick={() => addOption(field)}><Plus className="w-4 h-4" /></Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
                 <DialogFooter>
@@ -267,7 +318,7 @@ export function Products({ user: _user }: { user?: any } = {}) {
           </Dialog>
       </PageHeader>
 
-      <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Buscar productos por nombre, SKU, código de barras o categoría..." />
+      <SearchBar value={searchTerm} onChange={setSearchTerm} placeholder="Buscar productos por nombre, SKU, código de barras o características..." />
 
       <Card>
         <CardHeader>
@@ -284,8 +335,9 @@ export function Products({ user: _user }: { user?: any } = {}) {
                   <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Producto</th>
                   <th className="text-left py-3 px-4 font-semibold text-muted-foreground">SKU</th>
                   <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Código Barras</th>
-                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Categoría</th>
-                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Talla/Color</th>
+                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Tipo</th>
+                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Color / Talla</th>
+                  <th className="text-left py-3 px-4 font-semibold text-muted-foreground">Material</th>
                   <th className="text-right py-3 px-4 font-semibold text-muted-foreground">Precio</th>
                   <th className="text-right py-3 px-4 font-semibold text-muted-foreground">Stock</th>
                   <th className="text-center py-3 px-4 font-semibold text-muted-foreground">Acciones</th>
@@ -304,15 +356,12 @@ export function Products({ user: _user }: { user?: any } = {}) {
                     </td>
                     <td className="py-4 px-4 text-muted-foreground font-mono text-sm">{product.sku}</td>
                     <td className="py-4 px-4 text-muted-foreground font-mono text-xs">{product.barcode || '-'}</td>
-                    <td className="py-4 px-4">
-                      <span className="px-2 py-1 bg-primary/10 text-primary rounded-full text-sm">
-                        {product.category?.name || 'Sin categoría'}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 text-muted-foreground">{product.size || '-'} / {product.color || '-'}</td>
+                    <td className="py-4 px-4 text-muted-foreground">{product.type || '-'}</td>
+                    <td className="py-4 px-4 text-muted-foreground">{(product.color || []).join(', ') || '-'} / {(product.size || []).join(', ') || '-'}</td>
+                    <td className="py-4 px-4 text-muted-foreground">{(product.material || []).join(', ') || '-'}</td>
                     <td className="py-4 px-4 text-right font-semibold text-foreground">{formatCurrency(product.price)}</td>
                     <td className="py-4 px-4 text-right">
-                      <span className={`font-medium ${product.stock < 10 ? 'text-destructive' : 'text-success'}`}>
+                      <span className={`font-medium ${product.stock < (product.minStock ?? 10) ? 'text-destructive' : 'text-success'}`}>
                         {product.stock}
                       </span>
                     </td>
@@ -329,41 +378,13 @@ export function Products({ user: _user }: { user?: any } = {}) {
                   </tr>
                 ))}
                 {filteredProducts.length === 0 && (
-                  <tr><td colSpan={8} className="py-8 text-center text-muted-foreground">No se encontraron productos</td></tr>
+                  <tr><td colSpan={9} className="py-8 text-center text-muted-foreground">No se encontraron productos</td></tr>
                 )}
               </tbody>
             </table>
           </div>
         </CardContent>
       </Card>
-
-      {/* Category Management Dialog */}
-      <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Gestionar Categorías</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            {categories.map(cat => (
-              <div key={cat.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                {editingCategory?.id === cat.id ? (
-                  <div className="flex gap-2 flex-1">
-                    <Input value={editingCategory.name} onChange={e => setEditingCategory({ ...editingCategory, name: e.target.value })} />
-                    <Button size="sm" onClick={() => setConfirmCategoryUpdate(true)}>Guardar</Button>
-                    <Button size="sm" variant="outline" onClick={() => setEditingCategory(null)}>Cancelar</Button>
-                  </div>
-                ) : (
-                  <>
-                    <span className="font-medium">{cat.name}</span>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => setEditingCategory(cat)}><Edit2 className="w-4 h-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => setDeleteCategory(cat)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <ConfirmDialog
         open={confirmSave}
@@ -381,38 +402,6 @@ export function Products({ user: _user }: { user?: any } = {}) {
         description={`¿Eliminar "${deleteProduct?.name}" (${deleteProduct?.sku})? Esta acción no se puede deshacer.`}
         confirmText="Sí, eliminar"
         onConfirm={handleDelete}
-      />
-
-      <ConfirmDialog
-        open={confirmCategoryUpdate && !!editingCategory}
-        onOpenChange={() => setConfirmCategoryUpdate(false)}
-        title="Guardar categoría"
-        description={`¿Renombrar la categoría a "${editingCategory?.name}"?`}
-        onConfirm={async () => {
-          if (!editingCategory) return
-          try {
-            await api.categories.update(editingCategory.id, { name: editingCategory.name })
-            setCategories(categories.map(c => c.id === editingCategory.id ? editingCategory : c))
-            setEditingCategory(null)
-            addToast({ title: 'Categoría actualizada', variant: 'success' })
-          } catch (err: any) { addToast({ title: 'Error', description: err.message, variant: 'error' }) } finally { setConfirmCategoryUpdate(false) }
-        }}
-      />
-
-      <ConfirmDialog
-        open={!!deleteCategory}
-        onOpenChange={() => setDeleteCategory(null)}
-        title="Eliminar categoría"
-        description={`¿Eliminar la categoría "${deleteCategory?.name}"? Esta acción no se puede deshacer.`}
-        confirmText="Sí, eliminar"
-        onConfirm={async () => {
-          if (!deleteCategory) return
-          try {
-            await api.categories.delete(deleteCategory.id)
-            setCategories(categories.filter(c => c.id !== deleteCategory.id))
-            addToast({ title: 'Categoría eliminada', variant: 'success' })
-          } catch (err: any) { addToast({ title: 'Error', description: err.message, variant: 'error' }) } finally { setDeleteCategory(null) }
-        }}
       />
     </div>
   )
