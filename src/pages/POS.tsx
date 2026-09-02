@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast'
 import type { UserSession } from '@/App'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { loadStripe } from '@stripe/stripe-js'
-import { Elements, CardElement, useElements } from '@stripe/react-stripe-js'
+import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useElements } from '@stripe/react-stripe-js'
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
@@ -20,13 +20,66 @@ interface CartItem { product: Product; quantity: number; discount: number }
 
 function StripeCardField({ onReady }: { onReady: (el: any) => void }) {
   const elements = useElements()
+  const [isDark, setIsDark] = useState<boolean>(() => document.documentElement.classList.contains('dark'))
+
   useEffect(() => {
-    if (elements) onReady(elements.getElement(CardElement))
+    if (elements) {
+      const cardNumber = elements.getElement(CardNumberElement)
+      onReady(cardNumber)
+    }
   }, [elements, onReady])
+
+  useEffect(() => {
+    if (elements) {
+      const style = {
+        base: {
+          fontSize: '16px',
+          color: isDark ? '#f4f4f5' : '#18181b',
+          fontFamily: 'inherit',
+          '::placeholder': { color: isDark ? '#71717a' : '#a1a1aa' },
+        },
+        invalid: { color: '#ef4444' },
+      }
+      elements.getElement(CardNumberElement)?.update({ style })
+      elements.getElement(CardExpiryElement)?.update({ style })
+      elements.getElement(CardCvcElement)?.update({ style })
+    }
+  }, [elements, isDark])
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'))
+    })
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
+  }, [])
+
+  const fieldClass = `rounded-lg border-2 p-3 sm:p-4 shadow-sm transition-colors ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-300'}`
+  const labelClass = `block text-xs font-semibold uppercase tracking-wide mb-1 ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`
+
   return (
-    <CardElement
-      options={{ style: { base: { fontSize: '16px' } } }}
-    />
+    <div className="space-y-3">
+      <div>
+        <label className={labelClass}>Número de tarjeta</label>
+        <div className={fieldClass}>
+          <CardNumberElement options={{ showIcon: true }} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass}>Fecha de expiración</label>
+          <div className={fieldClass}>
+            <CardExpiryElement />
+          </div>
+        </div>
+        <div>
+          <label className={labelClass}>CVC</label>
+          <div className={fieldClass}>
+            <CardCvcElement />
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -346,13 +399,19 @@ export function POS({ user: _user }: { user: UserSession }) {
 
         <div className="p-4 border-t space-y-3">
           {paymentMethod === "Tarjeta" && (
-            <div>
+            <div className="rounded-xl border-2 border-primary/40 bg-primary/5 p-3 sm:p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-primary" />
+                <label className="text-sm font-semibold text-foreground">
+                  Datos de la tarjeta
+                </label>
+                <span className="ml-auto px-2 py-0.5 text-[10px] font-medium bg-primary/10 text-primary rounded-full uppercase tracking-wide">
+                  Pago seguro Stripe
+                </span>
+              </div>
               <Elements stripe={stripePromise}>
                 <StripeCardField onReady={setCardElement} />
               </Elements>
-              <p className="text-[11px] text-muted-foreground mt-2">
-                Prueba: 4242 4242 4242 4242 · cualquier fecha futura · CVC 123
-              </p>
             </div>
           )}
           <div>
