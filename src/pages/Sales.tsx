@@ -76,7 +76,7 @@ export function Sales({ user }: { user: UserSession }) {
     return matchSearch && matchDateFrom && matchDateTo
   })
 
-  const totalSales = sales.filter(s => s.status === 'activa').reduce((sum, s) => sum + s.total, 0)
+  const totalSales = sales.filter(s => s.status === 'activa').reduce((sum, s) => sum + Number(s.total), 0)
   const totalDevoluciones = sales.filter(s => s.status === 'anulada').length
 
   if (loading) return <LoadingSpinner />

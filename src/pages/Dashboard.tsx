@@ -32,8 +32,8 @@ export function Dashboard() {
   if (loading) return <LoadingSpinner message="Cargando dashboard..." />
 
   const weekly = stats?.weeklySales || []
-  const maxVal = Math.max(...weekly.map(w => w.total), 1)
-  const totalWeek = weekly.reduce((a, b) => a + b.total, 0)
+  const maxVal = Math.max(...weekly.map(w => Number(w.total)), 1)
+  const totalWeek = weekly.reduce((a, b) => a + Number(b.total), 0)
   const avgDay = Math.round(totalWeek / 7)
 
   const cards = [

@@ -99,8 +99,8 @@ export function Customers() {
 
   const stats = {
     totalCustomers: customers.length,
-    totalSpent: customers.reduce((sum, c) => sum + c.totalSpent, 0),
-    avgSpent: customers.length > 0 ? customers.reduce((sum, c) => sum + c.totalSpent, 0) / customers.length : 0,
+    totalSpent: customers.reduce((sum, c) => sum + Number(c.totalSpent), 0),
+    avgSpent: customers.length > 0 ? customers.reduce((sum, c) => sum + Number(c.totalSpent), 0) / customers.length : 0,
     topCustomer: customers.length > 0 ? customers.reduce((max, c) => c.totalSpent > max.totalSpent ? c : max, customers[0]) : null,
   }
 
