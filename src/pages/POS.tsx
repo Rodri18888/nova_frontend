@@ -156,7 +156,7 @@ export function POS({ user: _user }: { user: UserSession }) {
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /><span className="ml-2 text-muted-foreground">Cargando productos...</span></div>
 
   if (showFactura && lastSale) {
-    return <Factura sale={lastSale} onClose={() => { setShowFactura(false); setLastSale(null) }} />
+    return <Factura sale={lastSale} user={_user} onClose={() => { setShowFactura(false); setLastSale(null) }} />
   }
 
   if (saleSuccess) return (

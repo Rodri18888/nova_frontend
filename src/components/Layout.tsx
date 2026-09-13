@@ -40,9 +40,7 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
 
   return (
     <div className="flex h-screen bg-background">
-      {/* Sidebar - siempre abierta, integrada al fondo */}
       <aside className="w-64 flex-shrink-0 bg-background flex flex-col">
-        {/* Logo */}
         <div className="p-5">
           <div className="flex items-center gap-3">
             <img src="/nova-logo.png" alt="NOVA" className="w-10 h-10 rounded-xl object-cover flex-shrink-0" />
@@ -53,7 +51,6 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
           </div>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 py-3 px-3 space-y-0.5 overflow-y-auto overflow-x-hidden">
           {navigation.map((item) => {
             const isActive = location.pathname === item.href
@@ -74,7 +71,6 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
           })}
         </nav>
 
-        {/* User */}
         <div className="p-4">
           <div className="h-px bg-border mx-4 mb-3" />
           <div className="flex items-center gap-3 mb-3">
@@ -97,9 +93,7 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
         </div>
       </aside>
 
-      {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top bar */}
         <header className="h-16 flex-shrink-0 bg-background flex items-center justify-between px-6 lg:px-8">
           <div className="flex items-center gap-2.5">
             <Store className="w-4 h-4 text-primary" />
@@ -124,7 +118,6 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
           </div>
         </header>
 
-        {/* Content */}
         <main className="flex-1 overflow-auto p-6 lg:p-8">
           {children}
         </main>

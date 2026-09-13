@@ -163,7 +163,7 @@ export function Sales({ user }: { user: UserSession }) {
       </Dialog>
 
 
-      {showFactura && <Factura sale={showFactura} onClose={() => setShowFactura(null)} />}
+      {showFactura && <Factura sale={showFactura} user={user} onClose={() => setShowFactura(null)} />}
     </div>
   )
 }
