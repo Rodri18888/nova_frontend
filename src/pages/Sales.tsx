@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Eye, Ban, DollarSign, ShoppingCart, Download, RotateCcw } from 'lucide-react'
+import { Eye, Ban, DollarSign, ShoppingCart, Download } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import api from '@/lib/api'
 import { Factura } from '@/components/Factura'
@@ -24,8 +24,6 @@ export function Sales({ user }: { user: UserSession }) {
   const [anularSale, setAnularSale] = useState<Sale | null>(null)
   const [motivo, setMotivo] = useState('')
   const [showFactura, setShowFactura] = useState<Sale | null>(null)
-  const [refundSale, setRefundSale] = useState<Sale | null>(null)
-  const [refunding, setRefunding] = useState(false)
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
 
@@ -45,19 +43,6 @@ export function Sales({ user }: { user: UserSession }) {
     } catch (err: any) { addToast({ title: 'Error al anular', description: err.message, variant: 'error' }) }
   }
 
-
-  const handleRefund = async () => {
-    if (!refundSale) return
-    setRefunding(true)
-    try {
-      await api.payments.refund(refundSale.id)
-      setSales(sales.map(s => s.id === refundSale.id ? { ...s, status: 'anulada', motivoAnulacion: 'Reembolso Stripe' } : s))
-      setRefundSale(null)
-      addToast({ title: 'Venta reembolsada', description: `Se reembolsó ${formatCurrency(refundSale.total)} por Stripe`, variant: 'success' })
-    } catch (err: any) {
-      addToast({ title: 'Error al reembolsar', description: err.message, variant: 'error' })
-    } finally { setRefunding(false) }
-  }
 
   const handleExport = async () => {
     try {
@@ -125,7 +110,6 @@ export function Sales({ user }: { user: UserSession }) {
                     {sale.status === 'activa' && (
                       <>
                         <Button variant="ghost" size="icon" onClick={() => setShowFactura(sale)} className="text-primary"><ReceiptIcon className="w-4 h-4" /></Button>
-                        {user.rol === 'admin' && sale.paymentMethod === 'Tarjeta' && <Button variant="ghost" size="icon" onClick={() => setRefundSale(sale)}><RotateCcw className="w-4 h-4 text-warning" /></Button>}
                         {user.rol === 'admin' && <Button variant="ghost" size="icon" onClick={() => setAnularSale(sale)}><Ban className="w-4 h-4 text-destructive" /></Button>}
                       </>
                     )}
@@ -179,26 +163,7 @@ export function Sales({ user }: { user: UserSession }) {
       </Dialog>
 
 
-      <Dialog open={!!refundSale} onOpenChange={() => { if (!refunding) setRefundSale(null) }}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Reembolsar Venta {refundSale?.invoice}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Se reembolsará <strong>{formatCurrency(refundSale?.total ?? 0)}</strong> por Stripe.
-            </p>
-            <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 text-xs text-warning">
-              El stock NO se restaura automáticamente. Para devolverlo, usa el módulo <strong>Devoluciones</strong>.
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRefundSale(null)} disabled={refunding}>Cancelar</Button>
-            <Button onClick={handleRefund} disabled={refunding}>{refunding ? 'Reembolsando...' : 'Confirmar Reembolso'}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-
-      {showFactura && <Factura sale={showFactura} onClose={() => setShowFactura(null)} />}
+      {showFactura && <Factura sale={showFactura} user={user} onClose={() => setShowFactura(null)} />}
     </div>
   )
 }

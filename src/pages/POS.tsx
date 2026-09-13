@@ -9,79 +9,10 @@ import { Factura } from '@/components/Factura'
 import { useToast } from '@/hooks/use-toast'
 import type { UserSession } from '@/App'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { loadStripe } from '@stripe/stripe-js'
-import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useElements } from '@stripe/react-stripe-js'
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
 
 interface Product { id: string; name: string; sku: string; barcode?: string; price: number; stock: number; size: string[] | null; color: string[] | null }
 interface Customer { id: string; name: string; phone: string | null }
 interface CartItem { product: Product; quantity: number; discount: number }
-
-function StripeCardField({ onReady }: { onReady: (el: any) => void }) {
-  const elements = useElements()
-  const [isDark, setIsDark] = useState<boolean>(() => document.documentElement.classList.contains('dark'))
-
-  useEffect(() => {
-    if (elements) {
-      const cardNumber = elements.getElement(CardNumberElement)
-      onReady(cardNumber)
-    }
-  }, [elements, onReady])
-
-  useEffect(() => {
-    if (elements) {
-      const style = {
-        base: {
-          fontSize: '16px',
-          color: isDark ? '#f4f4f5' : '#18181b',
-          fontFamily: 'inherit',
-          '::placeholder': { color: isDark ? '#71717a' : '#a1a1aa' },
-        },
-        invalid: { color: '#ef4444' },
-      }
-      elements.getElement(CardNumberElement)?.update({ style })
-      elements.getElement(CardExpiryElement)?.update({ style })
-      elements.getElement(CardCvcElement)?.update({ style })
-    }
-  }, [elements, isDark])
-
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains('dark'))
-    })
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
-    return () => observer.disconnect()
-  }, [])
-
-  const fieldClass = `rounded-lg border-2 p-3 sm:p-4 shadow-sm transition-colors ${isDark ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-300'}`
-  const labelClass = `block text-xs font-semibold uppercase tracking-wide mb-1 ${isDark ? 'text-zinc-400' : 'text-zinc-500'}`
-
-  return (
-    <div className="space-y-3">
-      <div>
-        <label className={labelClass}>Número de tarjeta</label>
-        <div className={fieldClass}>
-          <CardNumberElement options={{ showIcon: true }} />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={labelClass}>Fecha de expiración</label>
-          <div className={fieldClass}>
-            <CardExpiryElement />
-          </div>
-        </div>
-        <div>
-          <label className={labelClass}>CVC</label>
-          <div className={fieldClass}>
-            <CardCvcElement />
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export function POS({ user: _user }: { user: UserSession }) {
   const { addToast } = useToast()
@@ -94,7 +25,6 @@ export function POS({ user: _user }: { user: UserSession }) {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
   const [paymentMethod, setPaymentMethod] = useState<'Efectivo' | 'Tarjeta' | 'Transferencia'>('Efectivo')
   const [processing, setProcessing] = useState(false)
-  const [cardElement, setCardElement] = useState<any>(null)
   const [saleSuccess, setSaleSuccess] = useState(false)
   const [lastSale, setLastSale] = useState<any>(null)
   const [globalDiscount, setGlobalDiscount] = useState(0)
@@ -171,22 +101,6 @@ export function POS({ user: _user }: { user: UserSession }) {
     if (cart.length === 0 || processing) return;
     setProcessing(true);
     try {
-      let paymentIntentId: string | undefined;
-      if (paymentMethod === "Tarjeta") {
-        const stripe = await stripePromise;
-        if (!stripe) throw new Error("Stripe no cargó");
-        if (!cardElement) throw new Error("Ingresa los datos de la tarjeta");
-        const { clientSecret } = await api.payments.createIntent(total);
-        const { error, paymentIntent } = await stripe.confirmCardPayment(
-          clientSecret,
-          {
-            payment_method: { card: cardElement },
-          },
-        );
-        if (error) throw new Error(error.message);
-        paymentIntentId = paymentIntent.id;
-      }
-
       const sale = await api.sales.create({
         customerId: selectedCustomer?.id || null,
         paymentMethod,
@@ -200,7 +114,6 @@ export function POS({ user: _user }: { user: UserSession }) {
         tax,
         total,
         discount: discountTotal,
-        paymentIntentId,
       });
       setLastSale(sale);
       setSaleSuccess(true);
@@ -243,7 +156,7 @@ export function POS({ user: _user }: { user: UserSession }) {
   if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="w-8 h-8 animate-spin text-primary" /><span className="ml-2 text-muted-foreground">Cargando productos...</span></div>
 
   if (showFactura && lastSale) {
-    return <Factura sale={lastSale} onClose={() => { setShowFactura(false); setLastSale(null) }} />
+    return <Factura sale={lastSale} user={_user} onClose={() => { setShowFactura(false); setLastSale(null) }} />
   }
 
   if (saleSuccess) return (
@@ -398,22 +311,6 @@ export function POS({ user: _user }: { user: UserSession }) {
         </div>
 
         <div className="p-4 border-t space-y-3">
-          {paymentMethod === "Tarjeta" && (
-            <div className="rounded-xl border-2 border-primary/40 bg-primary/5 p-3 sm:p-4 space-y-2">
-              <div className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-primary" />
-                <label className="text-sm font-semibold text-foreground">
-                  Datos de la tarjeta
-                </label>
-                <span className="ml-auto px-2 py-0.5 text-[10px] font-medium bg-primary/10 text-primary rounded-full uppercase tracking-wide">
-                  Pago seguro Stripe
-                </span>
-              </div>
-              <Elements stripe={stripePromise}>
-                <StripeCardField onReady={setCardElement} />
-              </Elements>
-            </div>
-          )}
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1">
               <User className="w-3 h-3" /> Cliente

@@ -5,22 +5,23 @@ import api from '@/lib/api'
 
 interface FacturaProps {
   sale: any
+  user: any
   onClose: () => void
 }
 
 interface StoreConfig {
-  name: string
   rnc: string
   phone: string
   address: string
   taxRate: number
   slogan: string
+
 }
 
-export function Factura({ sale, onClose }: FacturaProps) {
+export function Factura({ sale, user, onClose }: FacturaProps) {
   const [config, setConfig] = useState<StoreConfig>({
-    name: 'MODAPOS', rnc: '123-456789', phone: '809-555-0000',
-    address: 'Calle Principal #123, Santo Domingo', taxRate: 19, slogan: 'Sistema de Ventas para Tienda de Ropa',
+    rnc: '123-456789', phone: '809-555-0000',
+    address: 'Calle Principal #123, Santo Domingo', taxRate: 19, slogan: 'Sistema de Ventas',
   })
 
   useEffect(() => {
@@ -43,7 +44,7 @@ export function Factura({ sale, onClose }: FacturaProps) {
 
         <div className="p-8" id="factura-content" style={{ color: '#000' }}>
           <div className="text-center mb-6 pb-4" style={{ borderBottom: '2px solid #000' }}>
-            <h1 className="text-2xl font-extrabold tracking-widest" style={{ color: '#000' }}>{config.name}</h1>
+            <h1 className="text-2xl font-extrabold tracking-widest" style={{ color: '#000' }}>{user?.storeName || 'NOVA'}</h1>
             <p className="text-sm mt-1" style={{ color: '#000' }}>{config.slogan}</p>
             <p className="text-xs mt-1" style={{ color: '#000' }}>RNC: {config.rnc} | Tel: {config.phone}</p>
             <p className="text-xs" style={{ color: '#000' }}>{config.address}</p>
