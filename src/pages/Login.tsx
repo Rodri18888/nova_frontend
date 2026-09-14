@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Eye, EyeOff, Lock, User, Sun, Moon, MailOpen, CheckCircle2 } from 'lucide-react'
+import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import api from '@/lib/api'
 import ReCAPTCHA from 'react-google-recaptcha'
 import { useTheme } from '@/hooks/use-theme'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 const SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || ''
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
 
 interface UserSession {
   id: string; username: string; nombre: string; rol: string; storeId: string; storeName: string
@@ -52,6 +54,21 @@ export function Login({ onLogin }: LoginProps) {
       onLogin(user)
     } catch (err: any) {
       setError(err.message || 'Ocurrió un error')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleGoogleSuccess = async (res: CredentialResponse) => {
+    if (!res.credential) return
+    setError('')
+    setLoading(true)
+    try {
+      const user = await api.auth.googleLogin({ credential: res.credential }) as UserSession
+      localStorage.setItem('nova_user', JSON.stringify(user))
+      onLogin(user)
+    } catch (err: any) {
+      setError(err.message || 'Ocurrió un error con Google')
     } finally {
       setLoading(false)
     }
@@ -129,6 +146,25 @@ export function Login({ onLogin }: LoginProps) {
               Registrarse
             </button>
           </div>
+
+          {mode === 'login' && GOOGLE_CLIENT_ID && (
+            <>
+              <div className="flex justify-center mb-4">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => setError('No se pudo iniciar sesión con Google')}
+                  shape="pill"
+                  text="continue_with"
+                  theme={theme === 'dark' ? 'filled_black' : 'outline'}
+                />
+              </div>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs text-muted-foreground">o</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+            </>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {mode === 'register' && (

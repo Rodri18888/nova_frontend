@@ -81,6 +81,22 @@ const api = {
       const result = await res.json();
       return result.user;
     },
+    googleLogin: async (data: { credential: string }) => {
+      const res = await fetch(`${BASE}/api/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const err = await res
+          .json()
+          .catch(() => ({ error: "Error del servidor" }));
+        throw new Error(err.error || "No se pudo iniciar sesión con Google");
+      }
+      const result = await res.json();
+      return result.user;
+    },
     logout: async () => {
       await fetch(`${BASE}/api/auth/logout`, {
         method: "POST",
