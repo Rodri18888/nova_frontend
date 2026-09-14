@@ -1,30 +1,22 @@
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
-const TOKEN_KEY = "nova_token";
-
-function getToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
-}
-
 async function apiFetch(path: string, options?: RequestInit) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
 
-  const token = getToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
-  if (token) headers["Authorization"] = `Bearer ${token}`;
 
   try {
     const res = await fetch(`${BASE}${path}`, {
       headers,
+      credentials: "include",
       signal: controller.signal,
       ...options,
     });
     if (!res.ok) {
       if (res.status === 401) {
-        localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem("nova_user");
         window.location.reload();
         throw new Error("Sesión expirada");
@@ -41,11 +33,7 @@ async function apiFetch(path: string, options?: RequestInit) {
 }
 
 async function downloadCsv(url: string, filename: string) {
-  const token = getToken();
-  const headers: Record<string, string> = {};
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  const res = await fetch(url, { headers });
+  const res = await fetch(url, { credentials: "include" });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Error al descargar" }));
     throw new Error(err.error || `Error: ${res.status}`);
@@ -65,6 +53,7 @@ const api = {
       const res = await fetch(`${BASE}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(data),
       });
       if (!res.ok) {
@@ -74,13 +63,13 @@ const api = {
         throw new Error(err.error || "Credenciales inválidas");
       }
       const result = await res.json();
-      localStorage.setItem(TOKEN_KEY, result.token);
       return result.user;
     },
     register: async (data: { nombre: string; username?: string; email: string; password: string; storeCode?: string; storeName?: string; captchaToken?: string | null }) => {
       const res = await fetch(`${BASE}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(data),
       });
       if (!res.ok) {
@@ -90,8 +79,13 @@ const api = {
         throw new Error(err.error || "No se pudo registrar");
       }
       const result = await res.json();
-      localStorage.setItem(TOKEN_KEY, result.token);
       return result.user;
+    },
+    logout: async () => {
+      await fetch(`${BASE}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      }).catch(() => {});
     },
     forgotPassword: async (email: string) => {
       const res = await fetch(`${BASE}/api/auth/forgot-password`, {

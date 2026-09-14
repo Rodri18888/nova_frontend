@@ -8,6 +8,7 @@ import {
 import { Layout } from "./components/Layout";
 import { Login } from "./pages/Login";
 import { ResetPassword } from "./pages/ResetPassword";
+import api from "./lib/api";
 import { Dashboard } from "./pages/Dashboard";
 import { Products } from "./pages/Products";
 import { Inventory } from "./pages/Inventory";
@@ -87,9 +88,9 @@ function App() {
   }, []);
 
   const handleLogin = (u: UserSession) => setUser(u);
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await api.auth.logout();
     localStorage.removeItem("nova_user");
-    localStorage.removeItem("nova_token");
     setUser(null);
   };
 
