@@ -61,7 +61,7 @@ export function Users() {
   }
 
   const rolBadge = (rol: string) => {
-    const colors: Record<string, string> = { admin: 'bg-primary/10 text-primary', vendedor: 'bg-primary/10 text-primary' }
+    const colors: Record<string, string> = { admin: 'bg-primary/15 text-primary border border-primary/25', vendedor: 'bg-primary/15 text-primary border border-primary/25' }
     return <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[rol] || 'bg-muted'}`}>{rol}</span>
   }
 
@@ -70,7 +70,7 @@ export function Users() {
   return (
     <div className="space-y-6">
       <PageHeader title="Usuarios" description="Gestiona los usuarios del sistema">
-        <Button onClick={() => { setEditing(null); setForm({ username: '', password: '', nombre: '', email: '', rol: 'vendedor' }); setDialogOpen(true) }} className="bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30">
+        <Button onClick={() => { setEditing(null); setForm({ username: '', password: '', nombre: '', email: '', rol: 'vendedor' }); setDialogOpen(true) }} className="bg-primary/25 text-primary border border-primary/45 hover:bg-primary/35">
           <Plus className="w-4 h-4 mr-2" /> Nuevo Usuario
         </Button>
       </PageHeader>
@@ -117,7 +117,7 @@ export function Users() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-              <Button type="submit" className="bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30">{editing ? 'Guardar' : 'Crear'}</Button>
+              <Button type="submit" className="bg-primary/25 text-primary border border-primary/45 hover:bg-primary/35">{editing ? 'Guardar' : 'Crear'}</Button>
             </DialogFooter>
           </form>
         </DialogContent>

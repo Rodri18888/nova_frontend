@@ -16,7 +16,6 @@ interface Devolution { id: string; invoice: string; sale: any; total: number; mo
 
 export function Devoluciones({ user }: { user: UserSession }) {
   const { addToast } = useToast()
-  const [sales, setSales] = useState<Sale[]>([])
   const [devolutions, setDevolutions] = useState<Devolution[]>([])
   const [loading, setLoading] = useState(true)
   const [searchInvoice, setSearchInvoice] = useState('')
@@ -32,16 +31,19 @@ export function Devoluciones({ user }: { user: UserSession }) {
 
   async function loadData() {
     try {
-      const [s, d] = await Promise.all([api.sales.list(), api.devolutions.list()])
-      setSales((s as Sale[]).filter((x: any) => x.status === 'activa'))
-      setDevolutions(d as Devolution[])
+      setDevolutions(await api.devolutions.list() as Devolution[])
     } catch (e) { console.error(e) } finally { setLoading(false) }
   }
 
-  const searchSale = () => {
-    const found = sales.find(s => s.invoice.toLowerCase() === searchInvoice.trim().toLowerCase())
-    if (found) { setSelectedSale(found); setSelectedItems({}) }
-    else addToast({ title: 'Venta no encontrada', description: 'Verifica el número de factura', variant: 'warning' })
+  const searchSale = async () => {
+    const q = searchInvoice.trim()
+    if (!q) return
+    try {
+      const res = await api.sales.list({ search: q, limit: 50 })
+      const found = (res.sales as Sale[]).find(s => s.invoice.toLowerCase() === q.toLowerCase())
+      if (found) { setSelectedSale(found); setSelectedItems({}) }
+      else addToast({ title: 'Venta no encontrada', description: 'Verifica el número de factura', variant: 'warning' })
+    } catch (e: any) { addToast({ title: 'Error al buscar', description: e.message, variant: 'error' }) }
   }
 
   const updateReturnQty = (itemId: string, qty: number, maxQty: number) => {

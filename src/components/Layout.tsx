@@ -74,7 +74,7 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
         <div className="p-4">
           <div className="h-px bg-border mx-4 mb-3" />
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 bg-primary/20 border border-primary/30 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+            <div className="w-9 h-9 bg-primary/25 border border-primary/45 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
               <span className="text-sm font-bold text-primary">{user.nombre.charAt(0)}</span>
             </div>
             <div className="flex-1 min-w-0">
@@ -108,7 +108,7 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
             >
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
-            <div className="w-8 h-8 bg-primary/20 border border-primary/30 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-primary/25 border border-primary/45 rounded-lg flex items-center justify-center">
               <span className="text-xs font-bold text-primary">{user.nombre.charAt(0)}</span>
             </div>
             <div className="hidden sm:block">

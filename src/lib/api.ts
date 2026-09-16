@@ -182,7 +182,16 @@ const api = {
       apiFetch(`/api/customers/${id}`, { method: "DELETE" }),
   },
   sales: {
-    list: () => apiFetch("/api/sales"),
+    list: (params: { page?: number; limit?: number; search?: string; from?: string; to?: string } = {}) => {
+      const qs = new URLSearchParams();
+      if (params.page) qs.set("page", String(params.page));
+      if (params.limit) qs.set("limit", String(params.limit));
+      if (params.search) qs.set("search", params.search);
+      if (params.from) qs.set("from", params.from);
+      if (params.to) qs.set("to", params.to);
+      const query = qs.toString();
+      return apiFetch(`/api/sales${query ? `?${query}` : ""}`);
+    },
     create: (data: Record<string, unknown>) =>
       apiFetch("/api/sales", { method: "POST", body: JSON.stringify(data) }),
     getById: (id: string) => apiFetch(`/api/sales/${id}`),

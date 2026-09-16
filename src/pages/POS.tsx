@@ -222,7 +222,7 @@ export function POS({ user: _user }: { user: UserSession }) {
       </div>
 
       <div className="w-96 bg-card rounded-2xl shadow-xl flex flex-col border border-border">
-        <div className="p-6 border-b bg-primary/15 border-primary/25 rounded-t-2xl">
+        <div className="p-6 border-b bg-primary/20 border-primary/30 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <ShoppingCart className="w-6 h-6 text-primary" />
             <h2 className="text-xl font-bold text-foreground">Carrito</h2>
@@ -370,7 +370,7 @@ export function POS({ user: _user }: { user: UserSession }) {
               <button
                 key={m}
                 onClick={() => setPaymentMethod(m)}
-                className={`p-2 rounded-lg border-2 text-xs font-medium transition-all ${paymentMethod === m ? "border-primary/50 bg-primary/15 text-primary" : "border-border text-muted-foreground hover:border-primary/30"}`}
+                className={`p-2 rounded-lg border-2 text-xs font-medium transition-all ${paymentMethod === m ? "border-primary/60 bg-primary/25 text-primary" : "border-border text-muted-foreground hover:border-primary/40"}`}
               >
                 {m === "Efectivo" ? (
                   <Banknote className="w-4 h-4 mx-auto mb-1" />
