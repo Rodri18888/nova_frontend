@@ -26,20 +26,46 @@ export function Sales({ user }: { user: UserSession }) {
   const [showFactura, setShowFactura] = useState<Sale | null>(null)
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [totalCount, setTotalCount] = useState(0)
+  const [totalMonto, setTotalMonto] = useState(0)
+  const [totalActivas, setTotalActivas] = useState(0)
+  const [totalAnuladas, setTotalAnuladas] = useState(0)
 
-  useEffect(() => { loadSales() }, [])
+  useEffect(() => {
+    const t = setTimeout(() => loadSales(1, true), 300)
+    return () => clearTimeout(t)
+  }, [search, dateFrom, dateTo])
 
-  async function loadSales() {
-    try { setSales(await api.sales.list() as Sale[]) } catch (e) { console.error(e) } finally { setLoading(false) }
+  async function loadSales(p: number, replace: boolean) {
+    if (replace) setLoading(true)
+    try {
+      const res = await api.sales.list({ page: p, limit: 25, search, from: dateFrom, to: dateTo })
+      const merged = replace ? res.sales : [...sales, ...res.sales]
+      setSales(merged)
+      setPage(p)
+      setTotalCount(res.total)
+      setTotalMonto(Number(res.totalMonto))
+      setTotalActivas(res.totalActivas)
+      setTotalAnuladas(res.totalAnuladas)
+      setHasMore(merged.length < res.total)
+    } catch (e) { console.error(e) } finally { setLoading(false); setLoadingMore(false) }
+  }
+
+  const loadMore = () => {
+    setLoadingMore(true)
+    loadSales(page + 1, false)
   }
 
   const handleAnular = async () => {
     if (!anularSale || !motivo.trim()) return
     try {
       await api.sales.anular(anularSale.id, motivo)
-      setSales(sales.map(s => s.id === anularSale.id ? { ...s, status: 'anulada', motivoAnulacion: motivo } : s))
       setAnularSale(null); setMotivo('')
       addToast({ title: 'Venta anulada', description: `La venta ${anularSale.invoice} fue anulada`, variant: 'success' })
+      loadSales(page, true)
     } catch (err: any) { addToast({ title: 'Error al anular', description: err.message, variant: 'error' }) }
   }
 
@@ -52,18 +78,6 @@ export function Sales({ user }: { user: UserSession }) {
     }
   }
 
-  const filtered = sales.filter(s => {
-    const matchSearch = s.invoice?.toLowerCase().includes(search.toLowerCase()) ||
-      s.customer?.name?.toLowerCase().includes(search.toLowerCase())
-    const saleDate = new Date(s.createdAt)
-    const matchDateFrom = !dateFrom || saleDate >= new Date(dateFrom)
-    const matchDateTo = !dateTo || saleDate <= new Date(dateTo + 'T23:59:59')
-    return matchSearch && matchDateFrom && matchDateTo
-  })
-
-  const totalSales = sales.filter(s => s.status === 'activa').reduce((sum, s) => sum + Number(s.total), 0)
-  const totalDevoluciones = sales.filter(s => s.status === 'anulada').length
-
   if (loading) return <LoadingSpinner />
 
   return (
@@ -73,9 +87,9 @@ export function Sales({ user }: { user: UserSession }) {
       </PageHeader>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Total Ventas</p><p className="text-2xl font-bold">{formatCurrency(totalSales)}</p></div><div className="w-10 h-10 bg-success/15 rounded-lg flex items-center justify-center"><DollarSign className="w-5 h-5 text-success" /></div></div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Transacciones</p><p className="text-2xl font-bold">{sales.filter(s => s.status === 'activa').length}</p></div><div className="w-10 h-10 bg-primary/15 rounded-lg flex items-center justify-center"><ShoppingCart className="w-5 h-5 text-primary" /></div></div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Anuladas</p><p className="text-2xl font-bold text-destructive">{totalDevoluciones}</p></div><div className="w-10 h-10 bg-destructive/15 rounded-lg flex items-center justify-center"><Ban className="w-5 h-5 text-destructive" /></div></div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Total Ventas</p><p className="text-2xl font-bold">{formatCurrency(totalMonto)}</p></div><div className="w-10 h-10 bg-success/15 rounded-lg flex items-center justify-center"><DollarSign className="w-5 h-5 text-success" /></div></div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Transacciones</p><p className="text-2xl font-bold">{totalActivas}</p></div><div className="w-10 h-10 bg-primary/15 rounded-lg flex items-center justify-center"><ShoppingCart className="w-5 h-5 text-primary" /></div></div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Anuladas</p><p className="text-2xl font-bold text-destructive">{totalAnuladas}</p></div><div className="w-10 h-10 bg-destructive/15 rounded-lg flex items-center justify-center"><Ban className="w-5 h-5 text-destructive" /></div></div></CardContent></Card>
       </div>
 
       <div className="flex gap-3 items-center">
@@ -97,7 +111,10 @@ export function Sales({ user }: { user: UserSession }) {
               <th className="text-center py-3 px-4 font-semibold text-muted-foreground text-sm">Acciones</th>
             </tr></thead>
             <tbody>
-              {filtered.map(sale => (
+              {sales.length === 0 && (
+                <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">No hay ventas que coincidan con los filtros</td></tr>
+              )}
+              {sales.map(sale => (
                 <tr key={sale.id} className={`border-b hover:bg-accent/50 ${sale.status === 'anulada' ? 'bg-destructive/15 opacity-70' : ''}`}>
                   <td className="py-3 px-4 font-mono text-sm font-medium">{sale.invoice}</td>
                   <td className="py-3 px-4 text-sm text-muted-foreground">{formatDate(sale.createdAt)}</td>
@@ -120,6 +137,14 @@ export function Sales({ user }: { user: UserSession }) {
           </table>
         </CardContent>
       </Card>
+
+      {hasMore && (
+        <div className="flex justify-center">
+          <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
+            {loadingMore ? 'Cargando...' : `Cargar más (${totalCount - sales.length} restantes)`}
+          </Button>
+        </div>
+      )}
 
       <Dialog open={!!detailSale} onOpenChange={() => setDetailSale(null)}>
         <DialogContent className="max-w-2xl">
