@@ -1,0 +1,145 @@
+import { useState, useEffect } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Plus, Edit2, Trash2 } from 'lucide-react'
+import api from '@/lib/api'
+import { useToast } from '@/hooks/use-toast'
+import { PageHeader } from '@/components/ui/page-header'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+
+interface User {
+  id: string; username: string; nombre: string; email: string; rol: string; activo: boolean
+}
+
+export function Users() {
+  const { addToast } = useToast()
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editing, setEditing] = useState<User | null>(null)
+  const [form, setForm] = useState({ username: '', password: '', nombre: '', email: '', rol: 'vendedor' })
+  const [confirmSave, setConfirmSave] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [deleteUser, setDeleteUser] = useState<User | null>(null)
+
+  useEffect(() => { loadUsers() }, [])
+
+  async function loadUsers() {
+    try { setUsers(await api.users.list() as User[]) } catch (e) { console.error(e) } finally { setLoading(false) }
+  }
+
+  const requestSave = (e: React.FormEvent) => {
+    e.preventDefault()
+    setConfirmSave(true)
+  }
+
+  const handleConfirmSave = async () => {
+    setSaving(true)
+    try {
+      if (editing) {
+        const data: any = { id: editing.id, nombre: form.nombre, rol: form.rol }
+        if (form.password) data.password = form.password
+        const updated = await api.users.update(data) as User
+        setUsers(users.map(u => u.id === editing.id ? updated : u))
+        addToast({ title: 'Usuario actualizado', variant: 'success' })
+      } else {
+        const created = await api.users.create(form) as User
+        setUsers([created, ...users])
+        addToast({ title: 'Usuario creado', variant: 'success' })
+      }
+      setDialogOpen(false); setEditing(null)
+      setForm({ username: '', password: '', nombre: '', email: '', rol: 'vendedor' })
+    } catch (err: any) { addToast({ title: 'Error', description: err.message, variant: 'error' }) } finally { setSaving(false); setConfirmSave(false) }
+  }
+
+  const handleDelete = async () => {
+    if (!deleteUser) return
+    try { await api.users.delete(deleteUser.id); setUsers(users.filter(u => u.id !== deleteUser.id)); addToast({ title: 'Usuario eliminado', description: deleteUser.username, variant: 'warning' }) } catch (err: any) { addToast({ title: 'Error', description: err.message, variant: 'error' }) } finally { setDeleteUser(null) }
+  }
+
+  const rolBadge = (rol: string) => {
+    const colors: Record<string, string> = { admin: 'bg-primary/15 text-primary border border-primary/25', vendedor: 'bg-primary/15 text-primary border border-primary/25' }
+    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[rol] || 'bg-muted'}`}>{rol}</span>
+  }
+
+  if (loading) return <LoadingSpinner />
+
+  return (
+    <div className="space-y-6">
+      <PageHeader title="Usuarios" description="Gestiona los usuarios del sistema">
+        <Button onClick={() => { setEditing(null); setForm({ username: '', password: '', nombre: '', email: '', rol: 'vendedor' }); setDialogOpen(true) }} className="bg-primary/25 text-primary border border-primary/45 hover:bg-primary/35">
+          <Plus className="w-4 h-4 mr-2" /> Nuevo Usuario
+        </Button>
+      </PageHeader>
+
+      <Card>
+        <CardContent className="p-0">
+          <table className="w-full">
+            <thead><tr className="border-b bg-muted/50">
+              <th className="text-left py-3 px-4 font-semibold text-muted-foreground text-sm">Usuario</th>
+              <th className="text-left py-3 px-4 font-semibold text-muted-foreground text-sm">Nombre</th>
+              <th className="text-left py-3 px-4 font-semibold text-muted-foreground text-sm">Rol</th>
+              <th className="text-center py-3 px-4 font-semibold text-muted-foreground text-sm">Acciones</th>
+            </tr></thead>
+            <tbody>
+              {users.map(u => (
+                <tr key={u.id} className="border-b hover:bg-accent/50">
+                  <td className="py-3 px-4 font-medium">{u.username}</td>
+                  <td className="py-3 px-4 text-muted-foreground">{u.nombre}</td>
+                  <td className="py-3 px-4">{rolBadge(u.rol)}</td>
+                  <td className="py-3 px-4 text-center">
+                    <Button variant="ghost" size="icon" onClick={() => { setEditing(u); setForm({ username: u.username, password: '', nombre: u.nombre, email: u.email || '', rol: u.rol }); setDialogOpen(true) }}><Edit2 className="w-4 h-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteUser(u)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{editing ? 'Editar Usuario' : 'Nuevo Usuario'}</DialogTitle></DialogHeader>
+          <form onSubmit={requestSave} className="space-y-4">
+            {!editing && <div><label className="text-sm font-medium text-foreground">Usuario</label><Input value={form.username} onChange={e => setForm({ ...form, username: e.target.value })} required /></div>}
+            <div><label className="text-sm font-medium text-foreground">Nombre</label><Input value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} required /></div>
+            <div><label className="text-sm font-medium text-foreground">Email</label><Input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="usuario@correo.com" required /></div>
+            <div><label className="text-sm font-medium text-foreground">{editing ? 'Nueva Contraseña (vacío = no cambiar)' : 'Contraseña'}</label><Input type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required={!editing} /></div>
+            <div><label className="text-sm font-medium text-foreground">Rol</label>
+              <select value={form.rol} onChange={e => setForm({ ...form, rol: e.target.value })} className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
+                <option value="admin">Administrador</option>
+                <option value="vendedor">Vendedor</option>
+              </select>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+              <Button type="submit" className="bg-primary/25 text-primary border border-primary/45 hover:bg-primary/35">{editing ? 'Guardar' : 'Crear'}</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={confirmSave}
+        onOpenChange={setConfirmSave}
+        title={editing ? 'Guardar cambios' : 'Crear usuario'}
+        description={editing ? `¿Guardar los cambios en el usuario "${form.username}"?` : `¿Crear el usuario "${form.username}"?`}
+        loading={saving}
+        onConfirm={handleConfirmSave}
+      />
+
+      <ConfirmDialog
+        open={!!deleteUser}
+        onOpenChange={() => setDeleteUser(null)}
+        title="Eliminar usuario"
+        description={`¿Eliminar el usuario "${deleteUser?.username}"? Esta acción no se puede deshacer.`}
+        confirmText="Sí, eliminar"
+        onConfirm={handleDelete}
+      />
+    </div>
+  )
+}
