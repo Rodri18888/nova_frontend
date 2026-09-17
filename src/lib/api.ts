@@ -103,19 +103,32 @@ const api = {
         credentials: "include",
       }).catch(() => {});
     },
-    forgotPassword: async (email: string) => {
-      const res = await fetch(`${BASE}/api/auth/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      if (!res.ok) {
-        const err = await res
-          .json()
-          .catch(() => ({ error: "Error del servidor" }));
-        throw new Error(err.error || "No se pudo enviar el correo");
+        forgotPassword: async (email: string) => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+
+      try {
+        const res = await fetch(`${BASE}/api/auth/forgot-password`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          const err = await res
+            .json()
+            .catch(() => ({ error: "Error del servidor" }));
+          throw new Error(err.error || "No se pudo enviar el correo");
+        }
+        return res.json();
+      } catch (err: any) {
+        if (err.name === "AbortError") {
+          throw new Error("El servidor tardó demasiado en responder. Revisa tu conexión o intenta más tarde.");
+        }
+        throw err;
+      } finally {
+        clearTimeout(timeout);
       }
-      return res.json();
     },
     resetPassword: async (token: string, newPassword: string) => {
       const res = await fetch(`${BASE}/api/auth/reset-password`, {
