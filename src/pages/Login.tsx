@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Eye, EyeOff, Lock, User, Sun, Moon, MailOpen, CheckCircle2 } from 'lucide-react'
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import api from '@/lib/api'
@@ -31,6 +31,7 @@ export function Login({ onLogin }: LoginProps) {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const captchaRef = useRef<ReCAPTCHA>(null)
   const [showForgot, setShowForgot] = useState(false)
   const [forgotEmail, setForgotEmail] = useState('')
   const [forgotLoading, setForgotLoading] = useState(false)
@@ -65,6 +66,8 @@ export function Login({ onLogin }: LoginProps) {
       setError(err.message || 'Ocurrió un error')
     } finally {
       setLoading(false)
+      captchaRef.current?.reset()
+      setCaptchaToken(null)
     }
   }
 
@@ -142,14 +145,14 @@ export function Login({ onLogin }: LoginProps) {
           <div className="flex gap-2 mb-6">
             <button
               type="button"
-              onClick={() => { setMode('login'); setError(''); setCaptchaToken(null) }}
+              onClick={() => { setMode('login'); setError(''); captchaRef.current?.reset(); setCaptchaToken(null) }}
               className={`flex-1 h-10 rounded-xl text-sm font-medium transition-all ${mode === 'login' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground hover:text-foreground'}`}
             >
               Ingresar
             </button>
             <button
               type="button"
-              onClick={() => { setMode('register'); setError(''); setCaptchaToken(null) }}
+              onClick={() => { setMode('register'); setError(''); captchaRef.current?.reset(); setCaptchaToken(null) }}
               className={`flex-1 h-10 rounded-xl text-sm font-medium transition-all ${mode === 'register' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border text-muted-foreground hover:text-foreground'}`}
             >
               Registrarse
@@ -287,7 +290,7 @@ export function Login({ onLogin }: LoginProps) {
             </div>
 
             <div className="flex justify-center pt-1">
-              <ReCAPTCHA sitekey={SITE_KEY} onChange={setCaptchaToken} />
+              <ReCAPTCHA ref={captchaRef} sitekey={SITE_KEY} onChange={setCaptchaToken} />
             </div>
 
             <button
