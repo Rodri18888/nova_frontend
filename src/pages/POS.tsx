@@ -80,8 +80,14 @@ export function POS({ user: _user }: { user: UserSession }) {
   }
 
   const updateItemDiscount = (productId: string, discount: number) => {
-    setCart(cart.map(i => i.product.id === productId ? { ...i, discount: Math.max(0, Math.min(discount, i.product.price)) } : i))
-  }
+  setCart(prevCart => 
+    prevCart.map(i => 
+      i.product.id === productId 
+        ? { ...i, discount: Math.max(0, Math.min(discount, i.product.price)) } 
+        : i
+    )
+  );
+};
 
   const removeFromCart = (productId: string) => setCart(cart.filter(i => i.product.id !== productId))
 
@@ -294,7 +300,7 @@ export function POS({ user: _user }: { user: UserSession }) {
                             : parseFloat(e.target.value) || 0,
                         )
                       }
-                      className="w-16 h-7 text-xs text-right border rounded px-1 text-gray-900 dark:text-white"
+                      className="w-16 h-7 text-xs text-right border rounded px-1 bg-white text-gray-900 border-gray-300 dark:bg-gray-800 dark:text-white dark:border-gray-600 outline-none focus:ring-1 focus:ring-blue-500"
                       min="0"
                       step="10"
                     />
