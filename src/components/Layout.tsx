@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Warehouse, ShoppingCart, Receipt, Users,
-  UserCog, RotateCcw, Wallet, Truck, TruckIcon, LogOut, Sun, Moon, Store,
+  UserCog, RotateCcw, Wallet, Truck, TruckIcon, LogOut, Sun, Moon, Store, User,
 } from 'lucide-react'
 import { useTheme } from '@/hooks/use-theme'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -74,8 +74,8 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
         <div className="p-4">
           <div className="h-px bg-border mx-4 mb-3" />
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 bg-primary/25 border border-primary/45 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-              <span className="text-sm font-bold text-primary">{user.nombre.charAt(0)}</span>
+            <div className="w-8 h-8 bg-primary/25 border border-primary/45 rounded-lg flex items-center justify-center">
+              <User className="w-4 h-4" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">{user.nombre}</p>
@@ -109,7 +109,7 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
             <div className="w-8 h-8 bg-primary/25 border border-primary/45 rounded-lg flex items-center justify-center">
-              <span className="text-xs font-bold text-primary">{user.nombre.charAt(0)}</span>
+              <User className="w-4 h-4" />
             </div>
             <div className="hidden sm:block">
               <p className="text-sm font-medium text-foreground leading-tight">{user.nombre}</p>

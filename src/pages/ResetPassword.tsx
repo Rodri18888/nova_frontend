@@ -17,7 +17,11 @@ export function ResetPassword() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    if (password.length < 6) return setError('La contraseña debe tener al menos 6 caracteres')
+    const paswd = /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{7,15}$/
+      if (!paswd.test(password)) {
+        setError('La contraseña debe tener entre 7 y 15 caracteres, incluir al menos un número y un carácter especial (!@#$%^&*)')
+        return
+      }
     if (password !== confirm) return setError('Las contraseñas no coinciden')
     setLoading(true)
     try {
