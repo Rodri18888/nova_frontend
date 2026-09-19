@@ -237,6 +237,7 @@ export function Inventory({ user: _user }: { user?: any } = {}) {
       <Dialog open={showMovements} onOpenChange={setShowMovements}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-auto">
           <DialogHeader><DialogTitle>Historial de Movimientos</DialogTitle></DialogHeader>
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead><tr className="border-b bg-muted/50">
               <th className="text-left py-2 px-3">Fecha</th>
@@ -258,6 +259,7 @@ export function Inventory({ user: _user }: { user?: any } = {}) {
               {movements.length === 0 && <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">Sin movimientos</td></tr>}
             </tbody>
           </table>
+          </div>
         </DialogContent>
       </Dialog>
 

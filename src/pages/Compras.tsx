@@ -73,14 +73,15 @@ export function Compras({ user: _user }: { user: UserSession }) {
         <Button onClick={() => { setDialogOpen(true); setItems([]); setSupplierId('') }} className="bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30"><Plus className="w-4 h-4 mr-2" /> Nueva Compra</Button>
       </PageHeader>
 
-      <div className="flex gap-3">
-        <div className="flex-1"><SearchBar value={search} onChange={setSearch} placeholder="Buscar por factura o proveedor..." /></div>
-        <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-44" />
-        <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-44" />
+      <div className="flex flex-wrap gap-3">
+        <div className="flex-1 min-w-[200px]"><SearchBar value={search} onChange={setSearch} placeholder="Buscar por factura o proveedor..." /></div>
+        <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-full sm:w-44" />
+        <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-full sm:w-44" />
       </div>
 
       <Card>
         <CardContent className="p-0">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead><tr className="border-b bg-muted/50">
               <th className="text-left py-3 px-4">Factura</th><th className="text-left py-3 px-4">Proveedor</th><th className="text-left py-3 px-4">Fecha</th><th className="text-left py-3 px-4">Estado</th><th className="text-right py-3 px-4">Total</th><th className="text-center py-3 px-4">Acciones</th>
@@ -101,6 +102,7 @@ export function Compras({ user: _user }: { user: UserSession }) {
               {filteredPurchases.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-muted-foreground">No hay compras registradas</td></tr>}
             </tbody>
           </table>
+          </div>
         </CardContent>
       </Card>
 

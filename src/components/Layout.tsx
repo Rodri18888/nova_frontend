@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Warehouse, ShoppingCart, Receipt, Users,
-  UserCog, RotateCcw, Wallet, Truck, TruckIcon, LogOut, Sun, Moon, Store, User,
+  UserCog, RotateCcw, Wallet, Truck, TruckIcon, LogOut, Sun, Moon, Store, User, Menu, X,
 } from 'lucide-react'
 import { useTheme } from '@/hooks/use-theme'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
@@ -36,18 +36,31 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
   const location = useLocation()
   const { theme, toggle } = useTheme()
   const [confirmLogout, setConfirmLogout] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const navigation = allNavigation.filter(item => item.roles.includes(user.rol))
 
   return (
     <div className="flex h-screen bg-background">
-      <aside className="w-64 flex-shrink-0 bg-background flex flex-col">
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={() => setSidebarOpen(false)} aria-hidden="true" />
+      )}
+      <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-background flex flex-col border-r border-border transform transition-transform duration-300 lg:static lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-5">
-          <div className="flex items-center gap-3">
-            <img src="/nova-logo.png" alt="NOVA" className="w-10 h-10 rounded-xl object-cover flex-shrink-0" />
-            <div className="overflow-hidden">
-              <h1 className="text-lg font-bold text-foreground tracking-tight">NOVA</h1>
-              <p className="text-[11px] text-muted-foreground font-medium">Sistema de Ventas</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <img src="/nova-logo.png" alt="NOVA" className="w-10 h-10 rounded-xl object-cover flex-shrink-0" />
+              <div className="overflow-hidden">
+                <h1 className="text-lg font-bold text-foreground tracking-tight">NOVA</h1>
+                <p className="text-[11px] text-muted-foreground font-medium">Sistema de Ventas</p>
+              </div>
             </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-all"
+              aria-label="Cerrar menú"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
@@ -58,6 +71,7 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
               <Link
                 key={item.name}
                 to={item.href}
+                onClick={() => setSidebarOpen(false)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 text-sm group border ${
                   isActive
                     ? 'bg-primary/15 border-primary/30 text-primary'
@@ -96,6 +110,13 @@ export function Layout({ children, user, onLogout }: LayoutProps) {
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="h-16 flex-shrink-0 bg-background flex items-center justify-between px-6 lg:px-8">
           <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden w-9 h-9 flex items-center justify-center rounded-xl border border-border bg-accent/50 text-muted-foreground hover:text-foreground hover:bg-accent transition-all"
+              aria-label="Abrir menú"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
             <Store className="w-4 h-4 text-primary" />
             <p className="text-sm font-medium text-foreground">{user.storeName}</p>
           </div>

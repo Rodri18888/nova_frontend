@@ -89,9 +89,9 @@ export function Caja({ user: _user }: { user: UserSession }) {
             <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Esperado</p><p className="text-2xl font-bold text-primary">{formatCurrency(current.initialAmount + current.totalSales - current.totalReturns + movementsTotal)}</p></CardContent></Card>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <Button onClick={() => setMovementModal(true)} className="bg-sky-400/20 text-sky-300 border border-sky-400/30 hover:bg-sky-400/30"><ArrowUpRight className="w-4 h-4 mr-2" /> Movimiento</Button>
-            <div className="flex gap-2 ml-auto">
+            <div className="flex flex-wrap gap-2 ml-auto">
               <Input type="number" value={closeAmount} onChange={e => setCloseAmount(e.target.value)} placeholder="Monto real..." className="w-48" />
               <Button onClick={handleClose} className="bg-red-400/20 text-red-200 border border-red-400/30 hover:bg-red-400/30">Cerrar Caja</Button>
             </div>
@@ -100,6 +100,7 @@ export function Caja({ user: _user }: { user: UserSession }) {
           <Card>
             <CardHeader><CardTitle>Movimientos de Hoy</CardTitle></CardHeader>
             <CardContent className="p-0">
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead><tr className="border-b bg-muted/50"><th className="text-left py-3 px-4">Hora</th><th className="text-left py-3 px-4">Tipo</th><th className="text-left py-3 px-4">Motivo</th><th className="text-right py-3 px-4">Monto</th></tr></thead>
                 <tbody>
@@ -114,6 +115,7 @@ export function Caja({ user: _user }: { user: UserSession }) {
                   {current.movements.length === 0 && <tr><td colSpan={4} className="py-8 text-center text-muted-foreground">Sin movimientos</td></tr>}
                 </tbody>
               </table>
+              </div>
             </CardContent>
           </Card>
         </>
@@ -122,6 +124,7 @@ export function Caja({ user: _user }: { user: UserSession }) {
       <Card>
         <CardHeader><CardTitle>Historial de Cierres</CardTitle></CardHeader>
         <CardContent className="p-0">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead><tr className="border-b bg-muted/50"><th className="text-left py-3 px-4">Apertura</th><th className="text-left py-3 px-4">Cierre</th><th className="text-left py-3 px-4">Estado</th><th className="text-right py-3 px-4">Inicial</th><th className="text-right py-3 px-4">Real</th><th className="text-right py-3 px-4">Diferencia</th></tr></thead>
             <tbody>
@@ -137,6 +140,7 @@ export function Caja({ user: _user }: { user: UserSession }) {
               ))}
             </tbody>
           </table>
+          </div>
         </CardContent>
       </Card>
 

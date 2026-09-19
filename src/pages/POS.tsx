@@ -172,7 +172,7 @@ export function POS({ user: _user }: { user: UserSession }) {
   )
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex gap-6" onKeyDown={handleKeyDown}>
+    <div className="flex flex-col gap-6 lg:flex-row lg:h-[calc(100vh-8rem)]" onKeyDown={handleKeyDown}>
       <div className="flex-1 flex flex-col">
         <div className="mb-4 space-y-3">
           <div className="relative">
@@ -227,7 +227,7 @@ export function POS({ user: _user }: { user: UserSession }) {
         </div>
       </div>
 
-      <div className="w-96 bg-card rounded-2xl shadow-xl flex flex-col border border-border">
+      <div className="w-full lg:w-96 bg-card rounded-2xl shadow-xl flex flex-col border border-border">
         <div className="p-6 border-b bg-primary/20 border-primary/30 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <ShoppingCart className="w-6 h-6 text-primary" />
