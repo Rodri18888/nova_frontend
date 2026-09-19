@@ -77,6 +77,7 @@ export function Users() {
 
       <Card>
         <CardContent className="p-0">
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead><tr className="border-b bg-muted/50">
               <th className="text-left py-3 px-4 font-semibold text-muted-foreground text-sm">Usuario</th>
@@ -98,6 +99,7 @@ export function Users() {
               ))}
             </tbody>
           </table>
+          </div>
         </CardContent>
       </Card>
 

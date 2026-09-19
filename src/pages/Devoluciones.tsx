@@ -92,8 +92,8 @@ export function Devoluciones({ user }: { user: UserSession }) {
       <Card>
         <CardHeader><CardTitle className="text-lg">Buscar Venta</CardTitle></CardHeader>
         <CardContent>
-          <div className="flex gap-3">
-            <Input placeholder="Número de factura (ej: F-000001)" value={searchInvoice} onChange={e => setSearchInvoice(e.target.value)} className="flex-1" />
+          <div className="flex flex-wrap gap-3">
+            <Input placeholder="Número de factura (ej: F-000001)" value={searchInvoice} onChange={e => setSearchInvoice(e.target.value)} className="flex-1 min-w-[200px]" />
             <Button onClick={searchSale} className="bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30"><Search className="w-4 h-4 mr-2" /> Buscar</Button>
           </div>
         </CardContent>
@@ -129,7 +129,7 @@ export function Devoluciones({ user }: { user: UserSession }) {
                 </tbody>
               </table>
             </div>
-            <div className="flex gap-3 items-end">
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
               <div className="flex-1"><label className="text-sm font-medium text-foreground">Motivo</label>
                 <select value={motivo} onChange={e => setMotivo(e.target.value)} className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm mt-1">
                   <option value="">Seleccionar motivo...</option>
@@ -139,7 +139,7 @@ export function Devoluciones({ user }: { user: UserSession }) {
                   <option value="defectuoso">Producto defectuoso</option>
                 </select>
               </div>
-              <Button onClick={() => setConfirmReturn(true)} disabled={processing || !motivo.trim()} className="bg-warning/20 text-warning border border-warning/30 hover:bg-warning/30">
+              <Button onClick={() => setConfirmReturn(true)} disabled={processing || !motivo.trim()} className="bg-warning/20 text-warning border border-warning/30 hover:bg-warning/30 w-full sm:w-auto">
                 <RotateCcw className="w-4 h-4 mr-2" /> {processing ? 'Procesando...' : 'Procesar Devolución'}
               </Button>
             </div>
@@ -148,14 +148,15 @@ export function Devoluciones({ user }: { user: UserSession }) {
       )}
 
       <Card>
-        <CardHeader><CardTitle className="text-lg flex items-center gap-3">
+        <CardHeader><CardTitle className="text-lg flex flex-wrap items-center gap-3">
           Historial de Devoluciones
-          <div className="flex gap-2 ml-auto">
-            <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-40 h-8 text-xs" />
-            <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-40 h-8 text-xs" />
+          <div className="flex flex-wrap gap-2 ml-auto">
+            <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-full sm:w-40 h-8 text-xs" />
+            <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-full sm:w-40 h-8 text-xs" />
           </div>
         </CardTitle></CardHeader>
         <CardContent className="p-0">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead><tr className="border-b bg-muted/50">
               <th className="text-left py-3 px-4">Devolución</th>
@@ -177,6 +178,7 @@ export function Devoluciones({ user }: { user: UserSession }) {
               {filteredDevolutions.length === 0 && <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">No hay devoluciones</td></tr>}
             </tbody>
           </table>
+          </div>
         </CardContent>
       </Card>
 

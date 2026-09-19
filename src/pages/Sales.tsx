@@ -92,14 +92,15 @@ export function Sales({ user }: { user: UserSession }) {
         <Card><CardContent className="p-4"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Anuladas</p><p className="text-2xl font-bold text-destructive">{totalAnuladas}</p></div><div className="w-10 h-10 bg-destructive/15 rounded-lg flex items-center justify-center"><Ban className="w-5 h-5 text-destructive" /></div></div></CardContent></Card>
       </div>
 
-      <div className="flex gap-3 items-center">
-        <div className="flex-1"><SearchBar value={search} onChange={setSearch} placeholder="Buscar por factura o cliente..." /></div>
-        <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-44" />
-        <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-44" />
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="flex-1 min-w-[200px]"><SearchBar value={search} onChange={setSearch} placeholder="Buscar por factura o cliente..." /></div>
+        <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="w-full sm:w-44" />
+        <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="w-full sm:w-44" />
       </div>
 
       <Card>
         <CardContent className="p-0">
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead><tr className="border-b bg-muted/50">
               <th className="text-left py-3 px-4 font-semibold text-muted-foreground text-sm">Factura</th>
@@ -135,6 +136,7 @@ export function Sales({ user }: { user: UserSession }) {
               ))}
             </tbody>
           </table>
+          </div>
         </CardContent>
       </Card>
 
@@ -151,17 +153,19 @@ export function Sales({ user }: { user: UserSession }) {
           <DialogHeader><DialogTitle>Detalle - {detailSale?.invoice}</DialogTitle></DialogHeader>
           {detailSale && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div><p className="text-muted-foreground">Cliente</p><p className="font-medium">{detailSale.customer?.name || 'General'}</p></div>
                 <div><p className="text-muted-foreground">Vendedor</p><p className="font-medium">{detailSale.user?.nombre || 'N/A'}</p></div>
                 <div><p className="text-muted-foreground">Fecha</p><p className="font-medium">{formatDate(detailSale.createdAt)}</p></div>
                 <div><p className="text-muted-foreground">Pago</p><p className="font-medium">{detailSale.paymentMethod}</p></div>
               </div>
               {detailSale.status === 'anulada' && <div className="bg-destructive/15 border border-destructive/40 rounded-lg p-3 text-sm text-destructive"><strong>Motivo de anulación:</strong> {detailSale.motivoAnulacion}</div>}
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead><tr className="border-b"><th className="text-left py-2">Producto</th><th className="text-right py-2">Cant.</th><th className="text-right py-2">Precio</th><th className="text-right py-2">Subtotal</th></tr></thead>
                 <tbody>{detailSale.items.map((item: any) => (<tr key={item.id} className="border-b"><td className="py-2">{item.product?.name}</td><td className="text-right py-2">{item.quantity}</td><td className="text-right py-2">{formatCurrency(item.price)}</td><td className="text-right py-2 font-medium">{formatCurrency(item.subtotal)}</td></tr>))}</tbody>
               </table>
+              </div>
               <div className="text-right space-y-1 text-sm border-t pt-3">
                 <p>Subtotal: {formatCurrency(detailSale.subtotal)}</p>
                 {detailSale.discount > 0 && <p className="text-destructive">Descuento: -{formatCurrency(detailSale.discount)}</p>}
