@@ -80,8 +80,14 @@ export function POS({ user: _user }: { user: UserSession }) {
   }
 
   const updateItemDiscount = (productId: string, discount: number) => {
-    setCart(cart.map(i => i.product.id === productId ? { ...i, discount: Math.max(0, Math.min(discount, i.product.price)) } : i))
-  }
+  setCart(prevCart => 
+    prevCart.map(i => 
+      i.product.id === productId 
+        ? { ...i, discount: Math.max(0, Math.min(discount, i.product.price)) } 
+        : i
+    )
+  );
+};
 
   const removeFromCart = (productId: string) => setCart(cart.filter(i => i.product.id !== productId))
 
