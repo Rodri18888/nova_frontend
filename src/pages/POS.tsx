@@ -294,7 +294,7 @@ export function POS({ user: _user }: { user: UserSession }) {
                             : parseFloat(e.target.value) || 0,
                         )
                       }
-                      className="w-16 h-7 text-xs text-right border rounded px-1"
+                      className="w-16 h-7 text-xs text-right border rounded px-1 text-gray-900 dark:text-white"
                       min="0"
                       step="10"
                     />
