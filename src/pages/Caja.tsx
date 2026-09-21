@@ -36,7 +36,7 @@ export function Caja({ user: _user }: { user: UserSession }) {
 
   const handleOpen = async () => {
     const amount = parseFloat(openAmount)
-    if (isNaN(amount) || amount < 0) return
+    if (isNaN(amount) || amount < 0 || amount >= 1e10) { addToast({ title: 'Monto no válido', description: 'Ingresa un monto de 0 a 9,999,999,999.99', variant: 'warning' }); return }
     try {
       await api.cashRegister.open({ initialAmount: amount })
       setOpenAmount(''); loadData()
@@ -46,7 +46,7 @@ export function Caja({ user: _user }: { user: UserSession }) {
 
   const handleClose = async () => {
     const amount = parseFloat(closeAmount)
-    if (isNaN(amount)) return
+    if (isNaN(amount) || amount < 0 || amount >= 1e10) { addToast({ title: 'Monto no válido', description: 'Ingresa el monto real de 0 a 9,999,999,999.99', variant: 'warning' }); return }
     try {
       await api.cashRegister.close({ realAmount: amount })
       setCloseAmount(''); loadData()
@@ -56,7 +56,8 @@ export function Caja({ user: _user }: { user: UserSession }) {
 
   const handleMovement = async () => {
     const amount = parseFloat(movAmount)
-    if (isNaN(amount) || amount <= 0 || !movReason.trim()) return
+    if (isNaN(amount) || amount <= 0 || amount >= 1e10) { addToast({ title: 'Monto no válido', description: 'Ingresa un monto de 0 a 9,999,999,999.99', variant: 'warning' }); return }
+    if (!movReason.trim()) return
     try {
       await api.cashRegister.movement({ type: movType, amount, reason: movReason })
       setMovAmount(''); setMovReason(''); setMovementModal(false); loadData()
